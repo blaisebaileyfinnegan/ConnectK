@@ -1,0 +1,53 @@
+--------------------Configuration: Connect - Win32 Debug--------------------
+Begining build with project "D:\Tim\ics199\ConnectFINAL\SampleSource\Connect.dsp", at root.
+Active configuration is Win32 (x86) Application (based on Win32 (x86) Application)
+
+Project's tools are:
+			"32-bit C/C++ Compiler for 80x86" with flags "/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /Fp"Debug/Connect.pch" /Yu"stdafx.h" /Fo"Debug/" /Fd"Debug/" /FD /c "
+			"OLE Type Library Maker" with flags "/nologo /D "_DEBUG" /mktyplib203 /o NUL /win32 "
+			"Win32 Resource Compiler" with flags "/l 0x409 /fo"Debug/Connect.res" /d "_DEBUG" "
+			"Browser Database Maker" with flags "/nologo /o"Debug/Connect.bsc" "
+			"COFF Linker for 80x86" with flags "/nologo /subsystem:windows /incremental:yes /pdb:"Debug/Connect.pdb" /debug /machine:I386 /out:"Debug/Connect.exe" /pdbtype:sept "
+			"Custom Build" with flags ""
+			"<Component 0xa>" with flags ""
+
+Creating command line "rc.exe /l 0x409 /fo"Debug/Connect.res" /d "_DEBUG" "D:\Tim\ics199\ConnectFINAL\SampleSource\Connect.rc"" 
+Creating temp file "C:\WINDOWS\TEMP\RSP6161.TMP" with contents </nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /Fp"Debug/Connect.pch" /Yu"stdafx.h" /Fo"Debug/" /Fd"Debug/" /FD /c 
+"D:\Tim\ics199\ConnectFINAL\SampleSource\Connect.cpp"
+"D:\Tim\ics199\ConnectFINAL\SampleSource\ConnectDoc.cpp"
+"D:\Tim\ics199\ConnectFINAL\SampleSource\ConnectK.cpp"
+"D:\Tim\ics199\ConnectFINAL\SampleSource\ConnectView.cpp"
+"D:\Tim\ics199\ConnectFINAL\SampleSource\MainFrm.cpp"
+"D:\Tim\ics199\ConnectFINAL\SampleSource\OptionsBox.cpp"
+>
+Creating command line "cl.exe @C:\WINDOWS\TEMP\RSP6161.TMP" 
+Creating temp file "C:\WINDOWS\TEMP\RSP6162.TMP" with contents </nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /Fp"Debug/Connect.pch" /Yc"stdafx.h" /Fo"Debug/" /Fd"Debug/" /FD /c 
+"D:\Tim\ics199\ConnectFINAL\SampleSource\StdAfx.cpp"
+>
+Creating command line "cl.exe @C:\WINDOWS\TEMP\RSP6162.TMP" 
+Creating temp file "C:\WINDOWS\TEMP\RSP6163.TMP" with contents </nologo /subsystem:windows /incremental:yes /pdb:"Debug/Connect.pdb" /debug /machine:I386 /out:"Debug/Connect.exe" /pdbtype:sept 
+.\Debug\Connect.obj
+.\Debug\ConnectDoc.obj
+.\Debug\ConnectK.obj
+.\Debug\ConnectView.obj
+.\Debug\MainFrm.obj
+.\Debug\OptionsBox.obj
+.\Debug\StdAfx.obj
+.\Debug\Connect.res>
+Creating command line "link.exe @C:\WINDOWS\TEMP\RSP6163.TMP" 
+Compiling resources...
+Compiling...
+StdAfx.cpp
+Compiling...
+Connect.cpp
+ConnectDoc.cpp
+ConnectK.cpp
+ConnectView.cpp
+MainFrm.cpp
+OptionsBox.cpp
+Generating Code...
+Linking...
+
+
+
+Connect.exe - 0 error(s), 0 warning(s)
