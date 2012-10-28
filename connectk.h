@@ -16,6 +16,7 @@ private:
 	int K;    // length of the straight line to win
 	bool G;   // gravity
 
+	char humanMark;
 	char computerMark;  // mark played by AI player for board evaluation
 
 	CharArrayArray board;    // board is indexed by [row][column]
@@ -24,10 +25,13 @@ private:
 public:
 
 	ConnectK();
-
 	~ConnectK();
 
-	void newGame(int M, int N, int K, bool G, char pmark);
-
+	void newGame(int M, int N, int K, bool G, char pmark, char hmark);
 	void nextMove(int &row, int &col);
+
+private:
+
+	int countWinningRectangles(CharArrayArray board, int row, int col, char mark);
+	int evaluate(CharArrayArray board);
 };

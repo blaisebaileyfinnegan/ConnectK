@@ -64,7 +64,7 @@ ConnectK::~ConnectK()
 //			  M-1|  |  |  |  |
 //               +-----------+
 //
-void ConnectK::newGame(int pM, int pN, int pK, bool pG, char pmark)
+void ConnectK::newGame(int pM, int pN, int pK, bool pG, char pmark, char hmark)
 {	
 	// re-initialize all variables
 
@@ -83,6 +83,7 @@ void ConnectK::newGame(int pM, int pN, int pK, bool pG, char pmark)
 	K = pK;
 	G = pG;
 	computerMark = pmark;
+	humanMark = hmark;
 
 	// initialize the board to all blank characters (see ConnectK.h for definitions)
 	if ( M > 0 && N > 0 )
@@ -150,4 +151,79 @@ void ConnectK::nextMove(int &row, int &col)
 			}
 		}
 	}
+}
+
+// AI Evaluation function
+// (own winning rows) - (opponent's winning rows)
+// board: The potential game state
+int ConnectK::evaluate(CharArrayArray board)
+{
+	int ownWinningRows = 0, opponentWinningRows = 0;
+
+	// Search for squares
+	for (int row = M - 1; row >= 0 ; row--)
+	{
+		for (int col = 0; col < N; col++)
+		{
+			// We've found a piece that belongs to us
+			if (board[row][col] == computerMark) 
+				ownWinningRows += countWinningRectangles(board, row, col, computerMark);
+			else if (board[row][col] == humanMark)
+				opponentWinningRows += countWinningRectangles(board, row, col, humanMark);
+		}
+	}
+	return ownWinningRows - opponentWinningRows;
+}
+
+int ConnectK::countWinningRectangles(CharArrayArray board, int row, int col, char mark)
+{
+	int rectangles = 0;
+
+	// Count horizontal winning rectangles
+	for (int i = K - 1; i <= 0; i++)
+	{
+		if ((col - i) < 0)
+			continue;
+
+		bool winning = true;
+		for (int j = 0; i < K && winning; j++)
+		{
+			if ((col-i+j) >= N)
+			{
+				winning = false;
+				break;
+			}
+
+			if (board[row][col-i+j] != BLANK && board[row][col-i+j] != mark)
+				winning = false;
+		}
+
+		if (winning)
+			rectangles++;
+	}
+
+	// Count vertical winning rectangles
+	for (int i = K - 1; i <= 0; i++)
+	{
+		if ((row + i) >= M)
+			continue;
+
+		bool winning = true;
+		for (int j = 0; i < K && winning; j++)
+		{
+			if ((row+i-j) < 0)
+			{
+				winning = false;
+				break;
+			}
+
+			if (board[row+i-j][col] != BLANK && board[row+i-j][col] != mark)
+				winning = false;
+		}
+
+		if (winning)
+			rectangles++;
+	}
+
+	return rectangles;
 }

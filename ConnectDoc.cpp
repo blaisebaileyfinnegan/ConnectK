@@ -98,7 +98,7 @@ BOOL CConnectDoc::OnNewDocument()
 
 	numMoves = 1;
 
-	ck->newGame(M,N,K,G, computerMark);
+	ck->newGame(M,N,K,G, computerMark, playersmark);
 
 	DeleteFile("gamelog.txt");
 
@@ -272,7 +272,7 @@ void CConnectDoc::OnResetGame()
 
 	newBoard();
 
-	ck->newGame(M,N,K,G, computerMark);
+	ck->newGame(M,N,K,G, computerMark, playersmark);
 
 	DeleteFile("gamelog.txt");
 

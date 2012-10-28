@@ -452,7 +452,8 @@ LRESULT CConnectView::OnPlayerOneInitMessage(WPARAM wParam, LPARAM lParam)
 							LOBYTE(HIWORD(lParam)), //N
 							HIBYTE(LOWORD(lParam)), //K
 							bG, //G
-							'X'); //mark for competitor 1
+							'X', //mark for competitor 1
+							'O'); 
 	}
 
 	// just to notify that message was received
@@ -490,7 +491,8 @@ LRESULT CConnectView::OnPlayerTwoInitMessage(WPARAM wParam, LPARAM lParam)
 							LOBYTE(HIWORD(lParam)), //N
 							HIBYTE(LOWORD(lParam)), //K
 							bG, //G
-							'O'); //mark for competitor 2
+							'O', //mark for competitor 2
+							'X'); 
 	}
 
 	// just to notify that message was received
