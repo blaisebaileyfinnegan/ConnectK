@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include <iostream>
+#include <conio.h>
 
 using namespace std;
 
@@ -141,9 +142,13 @@ void ConnectK::nextMove(int &row, int &col)
 		{
 			if (board[rows][cols] == BLANK)
 			{
+
 				// record the move made by the AI
 				board[rows][cols] = computerMark;
 
+#ifdef _DEBUG
+				_cprintf("Evaluation function for move (%i, %i) returned: %i\n", rows, cols, this->evaluate(board));
+#endif
 				// return the move made by the AI
 				row = rows;
 				col = cols;
@@ -172,6 +177,12 @@ int ConnectK::evaluate(CharArrayArray board)
 				opponentWinningRows += countWinningRectangles(board, row, col, humanMark);
 		}
 	}
+
+#ifdef _DEBUG
+	_cprintf("\tMy winning rows: %i\n", ownWinningRows);
+	_cprintf("\tOpponent's winning rows: %i\n", opponentWinningRows);
+#endif
+
 	return ownWinningRows - opponentWinningRows;
 }
 
@@ -180,13 +191,13 @@ int ConnectK::countWinningRectangles(CharArrayArray board, int row, int col, cha
 	int rectangles = 0;
 
 	// Count horizontal winning rectangles
-	for (int i = K - 1; i <= 0; i++)
+	for (int i = K - 1; i >= 0; i--)
 	{
 		if ((col - i) < 0)
 			continue;
 
 		bool winning = true;
-		for (int j = 0; i < K && winning; j++)
+		for (int j = 0; j < K && winning; j++)
 		{
 			if ((col-i+j) >= N)
 			{
@@ -203,13 +214,13 @@ int ConnectK::countWinningRectangles(CharArrayArray board, int row, int col, cha
 	}
 
 	// Count vertical winning rectangles
-	for (int i = K - 1; i <= 0; i++)
+	for (int i = K - 1; i >= 0; i--)
 	{
 		if ((row + i) >= M)
 			continue;
 
 		bool winning = true;
-		for (int j = 0; i < K && winning; j++)
+		for (int j = 0; j < K && winning; j++)
 		{
 			if ((row+i-j) < 0)
 			{

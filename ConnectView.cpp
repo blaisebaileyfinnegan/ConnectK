@@ -52,11 +52,19 @@ CConnectView::CConnectView()
 	//}}AFX_DATA_INIT
 	// TODO: add construction code here
 	m_pClientDC = NULL;
+
+#ifdef _DEBUG
+	AllocConsole();
+#endif
 }
 
 CConnectView::~CConnectView()
 {
 	delete m_pClientDC;
+
+#ifdef _DEBUG
+	FreeConsole();
+#endif
 }
 
 void CConnectView::DoDataExchange(CDataExchange* pDX)
