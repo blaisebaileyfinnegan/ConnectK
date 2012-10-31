@@ -129,6 +129,8 @@ void ConnectK::nextMove(int &row, int &col)
 			board[row][col] = X;
 	}
 
+	int alpha = minimax(board, -INFINITY, INFINITY, 6, true);
+
 	// Now we need to have an AI routine to determine the next move to make.
 	// In this case, we are just looking for an empty square on the board,
 	// and returning that move.  Hardly an effective AI routine!
@@ -237,4 +239,45 @@ int ConnectK::countWinningRectangles(CharArrayArray board, int row, int col, cha
 	}
 
 	return rectangles;
+}
+
+int ConnectK::minimax(CharArrayArray state, int alpha, int beta, int depth, bool isMaxNode)
+{
+	if (depth <= 0)
+		return evaluate(state);
+
+	for (int col = 0; col < N; col++)
+	{
+		if (state[0][col] == BLANK) //If column is not full
+		{
+			int currentRow = M - 1;
+			while (state[currentRow][col] != BLANK) //Find the row of the column the next piece will be placed, starting at the bottom
+				currentRow--;
+
+			CharArrayArray childState = new CharArray[M]; //Create copy of current state
+			for (int i = 0; i < M; i++)
+			{
+				childState[i] = new char[N];
+				for (int j = 0; j < N; j++)
+					childState[i][j] = state[i][j];
+			}
+			childState[currentRow][col] = computerMark; //Add the move for the child state
+
+			if (isMaxNode)
+			{
+				alpha = max(alpha, minimax(childState, alpha, beta, depth - 1, !isMaxNode));
+			}
+			else
+			{
+				beta = min(beta, minimax(childState, alpha, beta, depth - 1, !isMaxNode));
+			}
+
+			if (alpha >= beta)
+			{
+				_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
+				break;
+			}
+		}
+	}
+	return (isMaxNode) ? alpha : beta;
 }

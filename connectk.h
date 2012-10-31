@@ -1,8 +1,10 @@
 #include <afxwin.h>
+#include <numeric>
 
 #define BLANK ' '
 #define X     'X'
 #define O     'O'
+#define INFINITY 99999999999
 
 typedef char * CharArray;
 typedef CharArray * CharArrayArray; 
@@ -34,4 +36,5 @@ private:
 
 	int countWinningRectangles(CharArrayArray board, int row, int col, char mark);
 	int evaluate(CharArrayArray board);
+	int minimax(CharArrayArray state, int alpha, int beta, int depth, bool isMaxNode);
 };
