@@ -1,13 +1,13 @@
 #include <afxwin.h>
-#include <numeric>
+#include <vector>
+#include <array>
 
 #define BLANK ' '
 #define X     'X'
 #define O     'O'
 #define INFINITY 99999999999
 
-typedef char * CharArray;
-typedef CharArray * CharArrayArray; 
+typedef std::vector<std::vector<char>> CharVectorVector;
 
 class ConnectK
 {
@@ -21,7 +21,8 @@ private:
 	char humanMark;
 	char computerMark;  // mark played by AI player for board evaluation
 
-	CharArrayArray board;    // board is indexed by [row][column]
+	CharVectorVector board;
+	
 	int numOccupied;
 
 public:
@@ -33,8 +34,7 @@ public:
 	void nextMove(int &row, int &col);
 
 private:
-
-	int countWinningRectangles(CharArrayArray board, int row, int col, char mark);
-	int evaluate(CharArrayArray board);
-	int minimax(CharArrayArray state, int alpha, int beta, int depth, bool isMaxNode);
+	int countWinningRectangles(const CharVectorVector& board, int row, int col, char mark) const;
+	int evaluate(const CharVectorVector& board) const;
+	int minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode) const;
 };

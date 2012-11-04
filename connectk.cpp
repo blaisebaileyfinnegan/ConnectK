@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include <iostream>
 #include <conio.h>
+#include <vector>
 
 using namespace std;
 
@@ -11,16 +12,11 @@ using namespace std;
 ConnectK::ConnectK()
 	: M(0), N(0), K(0), G(FALSE)
 {
-	board = 0;
 }
 
 // destructor
 ConnectK::~ConnectK()
 {
-	for ( int i = 0; i < M; i++ )
-		delete [] board[i];
-
-	delete [] board;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -67,17 +63,9 @@ ConnectK::~ConnectK()
 //
 void ConnectK::newGame(int pM, int pN, int pK, bool pG, char pmark, char hmark)
 {	
+	board.clear();
+
 	// re-initialize all variables
-
-	// delete the previous game board if it exists
-	if ( board != NULL )
-	{
-		for ( int i = 0; i < M; i++ )
-			delete [] board[i];
-		board = 0;	
-		delete [] board;
-	}
-
 	// p is for parameter
 	M = pM;
 	N = pN;
@@ -89,13 +77,7 @@ void ConnectK::newGame(int pM, int pN, int pK, bool pG, char pmark, char hmark)
 	// initialize the board to all blank characters (see ConnectK.h for definitions)
 	if ( M > 0 && N > 0 )
 	{
-		board = new CharArray[M];
-		for (int i = 0; i < M; i++)
-		{
-			board[i] = new char[N];
-			for (int j = 0; j < N; j++)
-				board[i][j] = BLANK;
-		}
+		board.resize(M, vector<char>(N, BLANK));
 	}
 	else
 		cerr << "Error: bad array size." << endl;
@@ -123,13 +105,14 @@ void ConnectK::nextMove(int &row, int &col)
 	// If x and y are -1, then this is the first move of the game, the AI moves first.
 	if( ( row != -1 ) && ( col != -1 ) )
 	{
+		board[row];
 		if (computerMark == X)
 			board[row][col] = O;
 		else
 			board[row][col] = X;
 	}
 
-	int alpha = minimax(board, -INFINITY, INFINITY, 6, true);
+	int alpha = minimax(board, -INFINITY, INFINITY, 2, true);
 
 	// Now we need to have an AI routine to determine the next move to make.
 	// In this case, we are just looking for an empty square on the board,
@@ -147,13 +130,13 @@ void ConnectK::nextMove(int &row, int &col)
 
 				// record the move made by the AI
 				board[rows][cols] = computerMark;
+				// return the move made by the AI
+				row = rows;
+				col = cols;
 
 #ifdef _DEBUG
 				_cprintf("Evaluation function for move (%i, %i) returned: %i\n", rows, cols, this->evaluate(board));
 #endif
-				// return the move made by the AI
-				row = rows;
-				col = cols;
 				return;
 			}
 		}
@@ -163,7 +146,7 @@ void ConnectK::nextMove(int &row, int &col)
 // AI Evaluation function
 // (own winning rows) - (opponent's winning rows)
 // board: The potential game state
-int ConnectK::evaluate(CharArrayArray board)
+int ConnectK::evaluate(const CharVectorVector& board) const
 {
 	int ownWinningRows = 0, opponentWinningRows = 0;
 
@@ -188,7 +171,7 @@ int ConnectK::evaluate(CharArrayArray board)
 	return ownWinningRows - opponentWinningRows;
 }
 
-int ConnectK::countWinningRectangles(CharArrayArray board, int row, int col, char mark)
+int ConnectK::countWinningRectangles(const CharVectorVector& board, int row, int col, char mark) const
 {
 	int rectangles = 0;
 
@@ -241,7 +224,7 @@ int ConnectK::countWinningRectangles(CharArrayArray board, int row, int col, cha
 	return rectangles;
 }
 
-int ConnectK::minimax(CharArrayArray state, int alpha, int beta, int depth, bool isMaxNode)
+int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode) const
 {
 	if (depth <= 0)
 		return evaluate(state);
@@ -254,13 +237,7 @@ int ConnectK::minimax(CharArrayArray state, int alpha, int beta, int depth, bool
 			while (state[currentRow][col] != BLANK) //Find the row of the column the next piece will be placed, starting at the bottom
 				currentRow--;
 
-			CharArrayArray childState = new CharArray[M]; //Create copy of current state
-			for (int i = 0; i < M; i++)
-			{
-				childState[i] = new char[N];
-				for (int j = 0; j < N; j++)
-					childState[i][j] = state[i][j];
-			}
+			CharVectorVector childState = state;
 			childState[currentRow][col] = computerMark; //Add the move for the child state
 
 			if (isMaxNode)
@@ -274,7 +251,9 @@ int ConnectK::minimax(CharArrayArray state, int alpha, int beta, int depth, bool
 
 			if (alpha >= beta)
 			{
+#if _DEBUG
 				_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
+#endif
 				break;
 			}
 		}
