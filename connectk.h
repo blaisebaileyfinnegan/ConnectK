@@ -12,7 +12,6 @@ typedef std::vector<std::vector<char>> CharVectorVector;
 class ConnectK
 {
 private:
-
 	int M;    // row size
 	int N;    // column size
 	int K;    // length of the straight line to win
@@ -36,5 +35,5 @@ public:
 private:
 	int countWinningRectangles(const CharVectorVector& board, int row, int col, char mark) const;
 	int evaluate(const CharVectorVector& board) const;
-	int minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode) const;
+	int minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, const int& DepthOfRoot) const;
 };

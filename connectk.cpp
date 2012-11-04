@@ -101,7 +101,9 @@ void ConnectK::newGame(int pM, int pN, int pK, bool pG, char pmark, char hmark)
 //				
 void ConnectK::nextMove(int &row, int &col)
 {
-	row = (M - 1) - row;
+	row = 0; // Just make sure row is zero instead of assuming GUI code will *always* give zero as the row
+	while (board[row][col] != BLANK)
+		row--;
 	// If x and y are not -1 then we need to record the move made by the human player
 	// If x and y are -1, then this is the first move of the game, the AI moves first.
 	if( ( row != -1 ) && ( col != -1 ) )
@@ -112,35 +114,20 @@ void ConnectK::nextMove(int &row, int &col)
 			board[row][col] = X;
 	}
 
-	int alpha = minimax(board, -INFINITY, INFINITY, 2, true);
+	const int MaxDepth = 2;
 
-	// Now we need to have an AI routine to determine the next move to make.
-	// In this case, we are just looking for an empty square on the board,
-	// and returning that move.  Hardly an effective AI routine!
-	// You will need many supporting functions to create an effective AI competitor.
-	// Call them from this routine, but remember that this function is the only interface
-	// to the GUI there is and the next move your program makes must be assigned to the variables
-	// row and col.
-	for (int rows = M - 1; rows >= 0; rows--) // we want to look for blank positions at the bottom of each column
-	{
-		for (int cols = 0; cols < N; cols++) // columns are left to right
-		{
-			if (board[rows][cols] == BLANK)
-			{
+	int rowMoveToMake, columnMoveToMake;
+	int alpha = minimax(board, -INFINITY, INFINITY, MaxDepth, true, rowMoveToMake, columnMoveToMake, MaxDepth);
 
-				// record the move made by the AI
-				board[rows][cols] = computerMark;
-				// return the move made by the AI
-				row = (M - 1) - rows;
-				col = cols;
+	// record the move made by the AI
+	board[rowMoveToMake][columnMoveToMake] = computerMark;
+	// return the move made by the AI
+	row = (M - 1) - rowMoveToMake;
+	col = columnMoveToMake;
 
 #ifdef _DEBUG
-				_cprintf("Evaluation function for move (%i, %i) returned: %i\n", rows, cols, this->evaluate(board));
+				_cprintf("Evaluation function for move (%i, %i) returned: %i\n", rowMoveToMake, columnMoveToMake, this->evaluate(board));
 #endif
-				return;
-			}
-		}
-	}
 }
 
 // AI Evaluation function
@@ -224,7 +211,8 @@ int ConnectK::countWinningRectangles(const CharVectorVector& board, int row, int
 	return rectangles;
 }
 
-int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode) const
+int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, 
+	const int& DepthOfRoot) const
 {
 	if (depth <= 0)
 		return evaluate(state);
@@ -242,11 +230,19 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 
 			if (isMaxNode)
 			{
-				alpha = max(alpha, minimax(childState, alpha, beta, depth - 1, !isMaxNode));
+				int childValue = minimax(childState, alpha, beta, depth - 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthOfRoot);
+				// If at the top level, and this is the highest valued child so far, record the move to get there
+				if (depth == DepthOfRoot && childValue > alpha)
+				{
+					rowMoveToMake = currentRow;
+					columnMoveToMake = col;
+				}
+				// Update alpha value
+				alpha = max(alpha, childValue);
 			}
 			else
 			{
-				beta = min(beta, minimax(childState, alpha, beta, depth - 1, !isMaxNode));
+				beta = min(beta, minimax(childState, alpha, beta, depth - 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthOfRoot));
 			}
 
 			if (alpha >= beta)
