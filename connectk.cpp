@@ -101,11 +101,11 @@ void ConnectK::newGame(int pM, int pN, int pK, bool pG, char pmark, char hmark)
 //				
 void ConnectK::nextMove(int &row, int &col)
 {
+	row = (M - 1) - row;
 	// If x and y are not -1 then we need to record the move made by the human player
 	// If x and y are -1, then this is the first move of the game, the AI moves first.
 	if( ( row != -1 ) && ( col != -1 ) )
 	{
-		board[row];
 		if (computerMark == X)
 			board[row][col] = O;
 		else
@@ -131,7 +131,7 @@ void ConnectK::nextMove(int &row, int &col)
 				// record the move made by the AI
 				board[rows][cols] = computerMark;
 				// return the move made by the AI
-				row = rows;
+				row = (M - 1) - rows;
 				col = cols;
 
 #ifdef _DEBUG
