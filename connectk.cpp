@@ -213,6 +213,52 @@ int ConnectK::countWinningRectangles(const CharVectorVector& board, int row, int
 			rectangles++;
 	}
 
+	// Count diagonal winning rectangles coming from the bottom left
+	for (int i = K-1; i >= 0; i--)
+	{
+		if ( (row + i) >= M || (col - i) < 0  )
+			continue;
+
+		bool winning = true;
+		for (int j = 0; j < K && winning; j++)
+		{
+			if ((row+i-j) < 0 || (col-i+j) >= N)
+			{
+				winning = false;
+				break;
+			}
+
+			if (board[row+i-j][col-i+j] != BLANK && board[row+i-j][col-i+j] != mark)
+				winning = false;
+		}
+
+		if (winning)
+			rectangles++;
+	}
+
+	// Count diagonal winning rectangles coming from the bottom right
+	for (int i = K-1; i >= 0; i--)
+	{
+		if ( (row + i) >= M || (col + i) >= N  )
+			continue;
+
+		bool winning = true;
+		for (int j = 0; j < K && winning; j++)
+		{
+			if ((row+i-j) < 0 || (col+i-j) < 0)
+			{
+				winning = false;
+				break;
+			}
+
+			if (board[row+i-j][col+i-j] != BLANK && board[row+i-j][col+i-j] != mark)
+				winning = false;
+		}
+
+		if (winning)
+			rectangles++;
+	}
+
 	return rectangles;
 }
 
@@ -252,7 +298,7 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 
 			if (alpha >= beta)
 			{
-#if _DEBUG
+#ifdef _DEBUG				
 				_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
 #endif
 				break;
