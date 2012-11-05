@@ -101,7 +101,7 @@ void ConnectK::newGame(int pM, int pN, int pK, bool pG, char pmark, char hmark)
 //				
 void ConnectK::nextMove(int &row, int &col)
 {
-	row = 0; // Just make sure row is zero instead of assuming GUI code will *always* give zero as the row
+	row = 0; // Have to account for gravity (GUI gives where a mouse is clicked)
 	while (board[row][col] != BLANK)
 		row--;
 	// If x and y are not -1 then we need to record the move made by the human player
@@ -122,7 +122,7 @@ void ConnectK::nextMove(int &row, int &col)
 	// record the move made by the AI
 	board[rowMoveToMake][columnMoveToMake] = computerMark;
 	// return the move made by the AI
-	row = (M - 1) - rowMoveToMake;
+	row = rowMoveToMake;
 	col = columnMoveToMake;
 
 #ifdef _DEBUG
