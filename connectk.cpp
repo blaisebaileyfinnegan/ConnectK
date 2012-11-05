@@ -101,9 +101,14 @@ void ConnectK::newGame(int pM, int pN, int pK, bool pG, char pmark, char hmark)
 //				
 void ConnectK::nextMove(int &row, int &col)
 {
-	row = 0; // Have to account for gravity (GUI gives where a mouse is clicked)
-	while (board[row][col] != BLANK)
-		row--;
+	if (G)
+	{
+		row = 0; // Have to account for gravity (GUI gives where a mouse is clicked)
+		while (board[row][col] != BLANK)
+		{
+			row--;
+		}
+	}
 	// If x and y are not -1 then we need to record the move made by the human player
 	// If x and y are -1, then this is the first move of the game, the AI moves first.
 	if( ( row != -1 ) && ( col != -1 ) )
@@ -117,7 +122,7 @@ void ConnectK::nextMove(int &row, int &col)
 	const int MaxDepth = 2;
 
 	int rowMoveToMake, columnMoveToMake;
-	int alpha = minimax(board, -INFINITY, INFINITY, MaxDepth, true, rowMoveToMake, columnMoveToMake, MaxDepth);
+	int valueOfBestMove = minimax(board, -INFINITY, INFINITY, MaxDepth, true, rowMoveToMake, columnMoveToMake, MaxDepth);
 
 	// record the move made by the AI
 	board[rowMoveToMake][columnMoveToMake] = computerMark;
