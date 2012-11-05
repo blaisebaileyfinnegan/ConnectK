@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include <iostream>
 #include <conio.h>
+#include <vector>
 
 using namespace std;
 
@@ -11,16 +12,11 @@ using namespace std;
 ConnectK::ConnectK()
 	: M(0), N(0), K(0), G(FALSE)
 {
-	board = 0;
 }
 
 // destructor
 ConnectK::~ConnectK()
 {
-	for ( int i = 0; i < M; i++ )
-		delete [] board[i];
-
-	delete [] board;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -67,17 +63,9 @@ ConnectK::~ConnectK()
 //
 void ConnectK::newGame(int pM, int pN, int pK, bool pG, char pmark, char hmark)
 {	
+	board.clear();
+
 	// re-initialize all variables
-
-	// delete the previous game board if it exists
-	if ( board != NULL )
-	{
-		for ( int i = 0; i < M; i++ )
-			delete [] board[i];
-		board = 0;	
-		delete [] board;
-	}
-
 	// p is for parameter
 	M = pM;
 	N = pN;
@@ -89,13 +77,7 @@ void ConnectK::newGame(int pM, int pN, int pK, bool pG, char pmark, char hmark)
 	// initialize the board to all blank characters (see ConnectK.h for definitions)
 	if ( M > 0 && N > 0 )
 	{
-		board = new CharArray[M];
-		for (int i = 0; i < M; i++)
-		{
-			board[i] = new char[N];
-			for (int j = 0; j < N; j++)
-				board[i][j] = BLANK;
-		}
+		board.resize(M, vector<char>(N, BLANK));
 	}
 	else
 		cerr << "Error: bad array size." << endl;
@@ -119,6 +101,14 @@ void ConnectK::newGame(int pM, int pN, int pK, bool pG, char pmark, char hmark)
 //				
 void ConnectK::nextMove(int &row, int &col)
 {
+	if (G)
+	{
+		row = 0; // Have to account for gravity (GUI gives where a mouse is clicked)
+		while (board[row][col] != BLANK)
+		{
+			row--;
+		}
+	}
 	// If x and y are not -1 then we need to record the move made by the human player
 	// If x and y are -1, then this is the first move of the game, the AI moves first.
 	if( ( row != -1 ) && ( col != -1 ) )
@@ -129,41 +119,26 @@ void ConnectK::nextMove(int &row, int &col)
 			board[row][col] = X;
 	}
 
-	int alpha = minimax(board, -INFINITY, INFINITY, 6, true);
+	const int MaxDepth = 2;
 
-	// Now we need to have an AI routine to determine the next move to make.
-	// In this case, we are just looking for an empty square on the board,
-	// and returning that move.  Hardly an effective AI routine!
-	// You will need many supporting functions to create an effective AI competitor.
-	// Call them from this routine, but remember that this function is the only interface
-	// to the GUI there is and the next move your program makes must be assigned to the variables
-	// row and col.
-	for (int rows = M - 1; rows >= 0; rows--) // we want to look for blank positions at the bottom of each column
-	{
-		for (int cols = 0; cols < N; cols++) // columns are left to right
-		{
-			if (board[rows][cols] == BLANK)
-			{
+	int rowMoveToMake, columnMoveToMake;
+	int valueOfBestMove = minimax(board, -INFINITY, INFINITY, MaxDepth, true, rowMoveToMake, columnMoveToMake, MaxDepth);
 
-				// record the move made by the AI
-				board[rows][cols] = computerMark;
+	// record the move made by the AI
+	board[rowMoveToMake][columnMoveToMake] = computerMark;
+	// return the move made by the AI
+	row = rowMoveToMake;
+	col = columnMoveToMake;
 
 #ifdef _DEBUG
-				_cprintf("Evaluation function for move (%i, %i) returned: %i\n", rows, cols, this->evaluate(board));
+				_cprintf("Evaluation function for move (%i, %i) returned: %i\n", rowMoveToMake, columnMoveToMake, this->evaluate(board));
 #endif
-				// return the move made by the AI
-				row = rows;
-				col = cols;
-				return;
-			}
-		}
-	}
 }
 
 // AI Evaluation function
 // (own winning rows) - (opponent's winning rows)
 // board: The potential game state
-int ConnectK::evaluate(CharArrayArray board)
+int ConnectK::evaluate(const CharVectorVector& board) const
 {
 	int ownWinningRows = 0, opponentWinningRows = 0;
 
@@ -188,7 +163,7 @@ int ConnectK::evaluate(CharArrayArray board)
 	return ownWinningRows - opponentWinningRows;
 }
 
-int ConnectK::countWinningRectangles(CharArrayArray board, int row, int col, char mark)
+int ConnectK::countWinningRectangles(const CharVectorVector& board, int row, int col, char mark) const
 {
 	int rectangles = 0;
 
@@ -287,7 +262,8 @@ int ConnectK::countWinningRectangles(CharArrayArray board, int row, int col, cha
 	return rectangles;
 }
 
-int ConnectK::minimax(CharArrayArray state, int alpha, int beta, int depth, bool isMaxNode)
+int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, 
+	const int& DepthOfRoot) const
 {
 	if (depth <= 0)
 		return evaluate(state);
@@ -300,27 +276,29 @@ int ConnectK::minimax(CharArrayArray state, int alpha, int beta, int depth, bool
 			while (state[currentRow][col] != BLANK) //Find the row of the column the next piece will be placed, starting at the bottom
 				currentRow--;
 
-			CharArrayArray childState = new CharArray[M]; //Create copy of current state
-			for (int i = 0; i < M; i++)
-			{
-				childState[i] = new char[N];
-				for (int j = 0; j < N; j++)
-					childState[i][j] = state[i][j];
-			}
+			CharVectorVector childState = state;
 			childState[currentRow][col] = computerMark; //Add the move for the child state
 
 			if (isMaxNode)
 			{
-				alpha = max(alpha, minimax(childState, alpha, beta, depth - 1, !isMaxNode));
+				int childValue = minimax(childState, alpha, beta, depth - 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthOfRoot);
+				// If at the top level, and this is the highest valued child so far, record the move to get there
+				if (depth == DepthOfRoot && childValue > alpha)
+				{
+					rowMoveToMake = currentRow;
+					columnMoveToMake = col;
+				}
+				// Update alpha value
+				alpha = max(alpha, childValue);
 			}
 			else
 			{
-				beta = min(beta, minimax(childState, alpha, beta, depth - 1, !isMaxNode));
+				beta = min(beta, minimax(childState, alpha, beta, depth - 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthOfRoot));
 			}
 
 			if (alpha >= beta)
 			{
-#ifdef _DEBUG
+#ifdef _DEBUG				
 				_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
 #endif
 				break;
