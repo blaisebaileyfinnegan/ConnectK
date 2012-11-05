@@ -103,7 +103,7 @@ void ConnectK::nextMove(int &row, int &col)
 {
 	if (G)
 	{
-		row = 0; // Have to account for gravity (GUI gives where a mouse is clicked)
+		row = M - 1; // Have to account for gravity (GUI gives where a mouse is clicked)
 		while (board[row][col] != BLANK)
 		{
 			row--;
