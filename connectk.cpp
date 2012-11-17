@@ -118,12 +118,12 @@ void ConnectK::nextMove(int &row, int &col)
 			board[row][col] = X;
 	}
 
-	const int MaxDepth = 5;
+	const int MaxDepth = 3;
 	ExpirationTimer timer(3.0f);
 	timer.Start();
 
 	int rowMoveToMake, columnMoveToMake;
-	int valueOfBestMove = minimax(board, -INFINITY, INFINITY, MaxDepth, true, rowMoveToMake, columnMoveToMake, MaxDepth, timer);
+	int valueOfBestMove = minimax(board, -INFINITY, INFINITY, 0, true, rowMoveToMake, columnMoveToMake, MaxDepth, timer);
 
 	// record the move made by the AI
 	board[rowMoveToMake][columnMoveToMake] = computerMark;
@@ -264,9 +264,9 @@ int ConnectK::countWinningRectangles(const CharVectorVector& board, int row, int
 }
 
 int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, 
-	const int& DepthOfRoot, const ExpirationTimer& timer) const
+	const int DepthCutoff, const ExpirationTimer& timer) const
 {
-	if (depth <= 0 || timer.HasExpired())
+	if (depth >= DepthCutoff || timer.HasExpired())
 		return evaluate(state);
 
 	for (int col = 0; col < N; col++)
@@ -282,9 +282,9 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 
 			if (isMaxNode)
 			{
-				int childValue = minimax(childState, alpha, beta, depth - 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthOfRoot, timer);
+				int childValue = minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer);
 				// If at the top level, and this is the highest valued child so far, record the move to get there
-				if (depth == DepthOfRoot && childValue > alpha)
+				if (depth == 0 && childValue > alpha)
 				{
 					rowMoveToMake = currentRow;
 					columnMoveToMake = col;
@@ -294,7 +294,7 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 			}
 			else
 			{
-				beta = min(beta, minimax(childState, alpha, beta, depth - 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthOfRoot, timer));
+				beta = min(beta, minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer));
 			}
 
 			if (alpha >= beta)

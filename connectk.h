@@ -36,5 +36,5 @@ public:
 private:
 	int countWinningRectangles(const CharVectorVector& board, int row, int col, char mark) const;
 	int evaluate(const CharVectorVector& board) const;
-	int minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, const int& DepthOfRoot, const ExpirationTimer& timer) const;
+	int minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, const int DepthCutoff, const ExpirationTimer& timer) const;
 };
