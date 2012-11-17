@@ -134,6 +134,7 @@
     <ClCompile Include="ConnectDoc.cpp" />
     <ClCompile Include="ConnectK.cpp" />
     <ClCompile Include="ConnectView.cpp" />
+    <ClCompile Include="ExpirationTimer.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="OptionsBox.cpp" />
     <ClCompile Include="StdAfx.cpp">
@@ -151,6 +152,7 @@
     <ClInclude Include="ConnectDoc.h" />
     <ClInclude Include="ConnectK.h" />
     <ClInclude Include="ConnectView.h" />
+    <ClInclude Include="ExpirationTimer.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="Messages.h" />
     <ClInclude Include="OptionsBox.h" />

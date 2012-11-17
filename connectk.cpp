@@ -118,12 +118,19 @@ void ConnectK::nextMove(int &row, int &col)
 			board[row][col] = X;
 	}
 
-	const int MaxDepth = 3;
-	ExpirationTimer timer(3.0f);
+	ExpirationTimer timer(5.0f);
 	timer.Start();
 
-	int rowMoveToMake, columnMoveToMake;
-	int valueOfBestMove = minimax(board, -INFINITY, INFINITY, 0, true, rowMoveToMake, columnMoveToMake, MaxDepth, timer);
+	int rowMoveToMake = -1;
+	int columnMoveToMake = -1;
+	int currentMaxDepth = -1;
+	while (!timer.HasExpired())
+	{
+		++currentMaxDepth;
+		int valueOfBestMove = minimax(board, -INFINITY, INFINITY, 0, true, rowMoveToMake, columnMoveToMake, currentMaxDepth, timer);
+	}
+
+	_cprintf("AI IDS went to a depth of %i before stopping.\n", currentMaxDepth);
 
 	// record the move made by the AI
 	board[rowMoveToMake][columnMoveToMake] = computerMark;
