@@ -130,7 +130,9 @@ void ConnectK::nextMove(int &row, int &col)
 		int valueOfBestMove = minimax(board, -INFINITY, INFINITY, 0, true, rowMoveToMake, columnMoveToMake, currentMaxDepth, timer);
 	}
 
-	_cprintf("AI IDS went to a depth of %i before stopping.\n", currentMaxDepth);
+#ifdef _DEBUG
+	_cprintf("AI IDS went to a depth of %i before stopping (may not have finished at this depth).\n", currentMaxDepth);
+#endif
 
 	// record the move made by the AI
 	board[rowMoveToMake][columnMoveToMake] = computerMark;
@@ -139,7 +141,7 @@ void ConnectK::nextMove(int &row, int &col)
 	col = columnMoveToMake;
 
 #ifdef _DEBUG
-				_cprintf("Evaluation function for move (%i, %i) returned: %i\n", rowMoveToMake, columnMoveToMake, this->evaluate(board));
+	_cprintf("Evaluation function for move (%i, %i) returned: %i\n", rowMoveToMake, columnMoveToMake, this->evaluate(board));
 #endif
 }
 
@@ -273,6 +275,9 @@ int ConnectK::countWinningRectangles(const CharVectorVector& board, int row, int
 int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, 
 	const int DepthCutoff, const ExpirationTimer& timer) const
 {
+	int currentBestMoveRow = -1;
+	int currentBestMoveColumn = -1;
+
 	if (depth >= DepthCutoff || timer.HasExpired())
 		return evaluate(state);
 
@@ -293,8 +298,8 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 				// If at the top level, and this is the highest valued child so far, record the move to get there
 				if (depth == 0 && childValue > alpha)
 				{
-					rowMoveToMake = currentRow;
-					columnMoveToMake = col;
+					currentBestMoveRow = currentRow;
+					currentBestMoveColumn = col;
 				}
 				// Update alpha value
 				alpha = max(alpha, childValue);
@@ -313,5 +318,21 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 			}
 		}
 	}
+
+	if (depth == 0) // If this search finished in time, record the result
+	{
+		if (!timer.HasExpired())
+		{
+			rowMoveToMake = currentBestMoveRow;
+			columnMoveToMake = currentBestMoveColumn;
+		}
+		else
+		{
+#ifdef _DEBUG
+			_cprintf("Search of depth %i did not finish in time.\n", DepthCutoff);
+#endif
+		}
+	}
+
 	return (isMaxNode) ? alpha : beta;
 }
