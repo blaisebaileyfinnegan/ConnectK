@@ -163,6 +163,37 @@ int ConnectK::evaluate(const CharVectorVector& board) const
 	return ownWinningRows - opponentWinningRows;
 }
 
+// returns array of rectangle counts. Index corresponds to the segment length, and the value refers to how many there are of that length
+int *ConnectK::countWeightedWinningRectangles(const CharVectorVector& board, char mark) const
+{
+	int *segments = new int[K];
+	CharVectorVector scoring = CharVectorVector(board);
+	// Start from the bottom left
+	for (int i = M - 1; i >= 0; i--)
+	{
+		for (int j = 0; j < N; j++)
+		{
+			if (scoring[i][j] == mark) 
+			{
+				// Start with horizontal (to the right)
+				int a = 1;
+				while (j+a < N && scoring[i][j+a] == mark)
+				{
+					a++;
+				}
+				segments[j+a-1]++;
+				
+				// Vertical
+				a = 1;
+				while (j+a < N && scoring[i+a][j] == mark)
+					a++;
+				segments[j+a-1]++;
+			}
+		}
+	}
+	return segments;
+}
+
 int ConnectK::countWinningRectangles(const CharVectorVector& board, int row, int col, char mark) const
 {
 	int rectangles = 0;
