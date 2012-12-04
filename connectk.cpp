@@ -290,13 +290,14 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 				currentRow--;
 
 			CharVectorVector childState = state;
-			childState[currentRow][col] = computerMark; //Add the move for the child state
+			char markToMake = (isMaxNode) ? computerMark : humanMark;
+			childState[currentRow][col] = markToMake; //Add the move for the child state
 
 			if (isMaxNode)
 			{
 				int childValue = minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer);
 				// If at the top level, and this is the highest valued child so far, record the move to get there
-				if (depth == 0 && childValue >= alpha)
+				if (depth == 0 && childValue > alpha)
 				{
 					currentBestMoveRow = currentRow;
 					currentBestMoveColumn = col;
