@@ -2,6 +2,7 @@
 #include <iostream>
 #include <conio.h>
 #include <vector>
+#include <math.h>
 
 using namespace std;
 
@@ -101,22 +102,28 @@ void ConnectK::newGame(int pM, int pN, int pK, bool pG, char pmark, char hmark)
 //				
 void ConnectK::nextMove(int &row, int &col)
 {
-	if (G)
-	{
-		row = M - 1; // Have to account for gravity (GUI gives where a mouse is clicked)
-		while (board[row][col] != BLANK)
-		{
-			row--;
-		}
-	}
+
 	// If x and y are not -1 then we need to record the move made by the human player
 	// If x and y are -1, then this is the first move of the game, the AI moves first.
 	if( ( row != -1 ) && ( col != -1 ) )
 	{
+		if (G)
+		{
+			row = M - 1; // Have to account for gravity (GUI gives where a mouse is clicked)
+			while (board[row][col] != BLANK)
+			{
+				row--;
+			}
+		}
+
 		if (computerMark == X)
+		{
 			board[row][col] = O;
+		}
 		else
+		{
 			board[row][col] = X;
+		}
 	}
 
 	const int MaxDepth = 2;
@@ -131,66 +138,129 @@ void ConnectK::nextMove(int &row, int &col)
 	col = columnMoveToMake;
 
 #ifdef _DEBUG
-				_cprintf("Evaluation function for move (%i, %i) returned: %i\n", rowMoveToMake, columnMoveToMake, this->evaluate(board));
+				_cprintf("Evaluation function for move (%i, %i) returned: %i\n", rowMoveToMake, columnMoveToMake, this->evaluate(board, computerMark, humanMark));
 #endif
 }
 
-// AI Evaluation function
+// Takes any number of arguments and applies weight to it.
+// return INFINITY means MAKE THIS MOVE TO WIN
+int ConnectK::weigh(int *segments) const
+{
+	if (segments[3] > 0)
+		return INFINITY;
+	else
+	{
+		int points = 0;
+		for (int i = 0; i < K; i++)
+		{
+			points += (segments[i]*pow(i+1, 2));
+		}
+		return points;
+	}
+}
+
+// Evaluation function mark agnostic
 // (own winning rows) - (opponent's winning rows)
 // board: The potential game state
-int ConnectK::evaluate(const CharVectorVector& board) const
+int ConnectK::evaluate(const CharVectorVector& board, char mark, char enemyMark, boolean weighted) const
 {
-	int ownWinningRows = 0, opponentWinningRows = 0;
-
-	// Search for squares
-	for (int row = M - 1; row >= 0 ; row--)
+	int points = 0, enemyPoints = 0;
+	
+	if (!weighted)
 	{
-		for (int col = 0; col < N; col++)
+		// Search for squares
+		for (int row = M - 1; row >= 0 ; row--)
 		{
-			// We've found a piece that belongs to us
-			if (board[row][col] == computerMark) 
-				ownWinningRows += countWinningRectangles(board, row, col, computerMark);
-			else if (board[row][col] == humanMark)
-				opponentWinningRows += countWinningRectangles(board, row, col, humanMark);
+			for (int col = 0; col < N; col++)
+			{
+				// We've found a piece that belongs to us
+				if (board[row][col] == mark) 
+					points += countWinningRectangles(board, row, col, mark);
+				else if (board[row][col] == enemyMark)
+					enemyPoints += countWinningRectangles(board, row, col, enemyMark);
+			}
 		}
+	}
+	else
+	{
+		points = weigh(countSegmentLengths(board, mark));
+		enemyPoints = weigh(countSegmentLengths(board, enemyMark));
 	}
 
 #ifdef _DEBUG
-	_cprintf("\tMy winning rows: %i\n", ownWinningRows);
-	_cprintf("\tOpponent's winning rows: %i\n", opponentWinningRows);
+	_cprintf("\tMy points: %i\n", points);
+	_cprintf("\tOpponent's points: %i\n", enemyPoints);
 #endif
 
-	return ownWinningRows - opponentWinningRows;
+	return points - enemyPoints;
 }
 
-// returns array of rectangle counts. Index corresponds to the segment length, and the value refers to how many there are of that length
-int *ConnectK::countWeightedWinningRectangles(const CharVectorVector& board, char mark) const
+// Returns array of how many of our marks are in each segment of length index. segments[3] > 1 == WIN
+// Brute forces every possible segment to allow for gravity off case
+int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) const
 {
 	int *segments = new int[K];
-	CharVectorVector scoring = CharVectorVector(board);
+	for (int i = 0; i < K; i++)
+		segments[i] = 0;
+
+
 	// Start from the bottom left
 	for (int i = M - 1; i >= 0; i--)
 	{
 		for (int j = 0; j < N; j++)
 		{
-			if (scoring[i][j] == mark) 
-			{
+//			if (board[i][j] == mark) 
+//			{
 				// Start with horizontal (to the right)
-				int a = 1;
-				while (j+a < N && scoring[i][j+a] == mark)
+				if (j <= N-K)
 				{
-					a++;
+					int b = 0;
+					for (int a = 1; a < K; a++) 
+					{
+						if (board[i][j+a] == mark)
+						{
+							b++;
+						}
+						else if (board[i][j+a] != BLANK) // must be the enemy
+						{
+							b = -1;
+							break;
+						}
+					}
+					if (b != -1)
+						segments[b]++;
 				}
-				segments[j+a-1]++;
-				
+
 				// Vertical
-				a = 1;
-				while (j+a < N && scoring[i+a][j] == mark)
-					a++;
-				segments[j+a-1]++;
-			}
+				if (i >= 0+K)
+				{
+					int b = 0;
+					for (int a = 1; a < K; a++)
+					{
+						if (board[i-a][j] == mark)
+						{
+							b++;
+						}
+						else if (board[i-a][j] != BLANK) // must be the enemy
+						{
+							b = -1;
+							break;
+						}
+					}
+
+					if (b != -1)
+						segments[b]++;
+				}
+//			}
 		}
 	}
+
+	// Right now, the array is inverted. We need to invert it to return an array according the the method signature comment above
+	//for (int i = 0, temp = segments[K-1-i]; i < K || K-1-i <= i; i++, temp = segments[K-1-i]) {
+	//	segments[K-1-i] = segments[i];
+	//	segments[i] = temp;
+	//}
+
 	return segments;
 }
 
@@ -297,7 +367,7 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 	const int& DepthOfRoot) const
 {
 	if (depth <= 0)
-		return evaluate(state);
+		return evaluate(state, computerMark, humanMark);
 
 	for (int col = 0; col < N; col++)
 	{

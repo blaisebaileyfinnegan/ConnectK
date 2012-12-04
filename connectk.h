@@ -33,9 +33,9 @@ public:
 	void nextMove(int &row, int &col);
 
 private:
-	void populateSegments(const CharVectorVector& scoring, const CharVectorVector& board, int row, int col, char mark);
-	int *countWeightedWinningRectangles(const CharVectorVector& board, char mark) const;
+	int weigh(int *segments) const;
+	int *countSegmentLengths(const CharVectorVector& board, char mark) const;
 	int countWinningRectangles(const CharVectorVector& board, int row, int col, char mark) const;
-	int evaluate(const CharVectorVector& board) const;
+	int evaluate(const CharVectorVector& board, char mark, char enemyMark, boolean weighted = true) const;
 	int minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, const int& DepthOfRoot) const;
 };
