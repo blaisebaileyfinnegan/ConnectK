@@ -284,7 +284,7 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 	int currentBestMoveRow = -1;
 	int currentBestMoveColumn = -1;
 
-	if (depth >= DepthCutoff || timer.HasExpired())
+	if (Cutoff(depth, DepthCutoff, timer))
 		return evaluate(state);
 
 	for (int col = 0; col < N; col++)
@@ -342,4 +342,9 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 	}
 
 	return (isMaxNode) ? alpha : beta;
+}
+
+bool ConnectK::Cutoff(const int currentDepth, const int DepthCutoff, const ExpirationTimer& timer) const
+{
+	return (currentDepth >= DepthCutoff) || timer.HasExpired();
 }
