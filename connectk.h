@@ -34,8 +34,10 @@ public:
 	void nextMove(int &row, int &col);
 
 private:
+	int weigh(int *segments) const;
+	int *countSegmentLengths(const CharVectorVector& board, char mark) const;
 	int countWinningRectangles(const CharVectorVector& board, int row, int col, char mark) const;
-	int evaluate(const CharVectorVector& board) const;
+	int evaluate(const CharVectorVector& board, char mark, char enemyMark, boolean weighted = true) const;
 	void IDSMinimaxWithABPrune(CharVectorVector& state, int& rowMoveToMake, int& columnMoveToMake, const float idsSearchTime) const;
 	int minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, const int DepthCutoff, const ExpirationTimer& timer) const;
 	bool Cutoff(const int currentDepth, const int DepthCutoff, const ExpirationTimer& timer) const;
