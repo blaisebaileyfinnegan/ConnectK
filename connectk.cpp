@@ -118,21 +118,10 @@ void ConnectK::nextMove(int &row, int &col)
 			board[row][col] = X;
 	}
 
-	ExpirationTimer timer(5.0f);
-	timer.Start();
-
 	int rowMoveToMake = -1;
 	int columnMoveToMake = -1;
-	int currentMaxDepth = -1;
-	while (!timer.HasExpired())
-	{
-		++currentMaxDepth;
-		int valueOfBestMove = minimax(board, -INFINITY, INFINITY, 0, true, rowMoveToMake, columnMoveToMake, currentMaxDepth, timer);
-	}
-
-#ifdef _DEBUG
-	_cprintf("AI IDS went to a depth of %i before stopping (may not have finished at this depth).\n", currentMaxDepth);
-#endif
+	float idsSearchTime = 2.0f;
+	IDSMinimaxWithABPrune(board, rowMoveToMake, columnMoveToMake, idsSearchTime);
 
 	// record the move made by the AI
 	board[rowMoveToMake][columnMoveToMake] = computerMark;
@@ -270,6 +259,23 @@ int ConnectK::countWinningRectangles(const CharVectorVector& board, int row, int
 	}
 
 	return rectangles;
+}
+
+void ConnectK::IDSMinimaxWithABPrune(CharVectorVector& state, int& rowMoveToMake, int& columnMoveToMake, const float idsSearchTime) const
+{
+	ExpirationTimer timer(idsSearchTime);
+	timer.Start();
+
+	int currentMaxDepth = -1;
+	while (!timer.HasExpired())
+	{
+		++currentMaxDepth;
+		int valueOfBestMove = minimax(state, -INFINITY, INFINITY, 0, true, rowMoveToMake, columnMoveToMake, currentMaxDepth, timer);
+	}
+
+#ifdef _DEBUG
+	_cprintf("AI IDS went to a depth of %i before stopping (may not have finished at this depth).\n", currentMaxDepth);
+#endif
 }
 
 int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, 
