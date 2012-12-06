@@ -141,23 +141,6 @@ void ConnectK::nextMove(int &row, int &col)
 #endif
 }
 
-// Takes any number of arguments and applies weight to it.
-// return INFINITY means MAKE THIS MOVE TO WIN
-int ConnectK::weigh(int *segments) const
-{
-	if (segments[3] > 0)
-		return INFINITY;
-	else
-	{
-		int points = 0;
-		for (int i = 0; i < K; i++)
-		{
-			points += (segments[i]*pow(i+1, 2));
-		}
-		return points;
-	}
-}
-
 // Evaluation function mark agnostic
 // (own winning rows) - (opponent's winning rows)
 // board: The potential game state
@@ -194,13 +177,33 @@ int ConnectK::evaluate(const CharVectorVector& board, char mark, char enemyMark,
 	return points - enemyPoints;
 }
 
+// Takes any number of arguments and applies weight to it.
+int ConnectK::weigh(int *segments) const
+{
+	int points = 0;
+	for (int i = 1; i <= K; i++)
+	{
+		points += (segments[i]*pow(i, 4));
+	}
+	delete segments;
+	return points;
+}
+
 // Returns array of how many of our marks are in each segment of length index. segments[3] > 1 == WIN
 // Brute forces every possible segment to allow for gravity off case
 int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) const
 {
-	int *segments = new int[K];
-	for (int i = 0; i < K; i++)
+	int *segments = new int[K+1];
+	for (int i = 0; i <= K; i++)
 		segments[i] = 0;
+
+	// We need to manipulate it
+	CharVectorVector horizontalBoard = board;
+	CharVectorVector verticalBoard = board;
+	CharVectorVector backDiagonalBoard = board;
+	CharVectorVector forwardDiagonalBoard = board;
+	CharVectorVector diagonalBoard = board;
+
 
 
 	// Start from the bottom left
@@ -210,17 +213,18 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 		{
 //			if (board[i][j] == mark) 
 //			{
-				// Start with horizontal (to the right)
+				// Start with horizontal (going towards the right)
 				if (j <= N-K)
 				{
 					int b = 0;
-					for (int a = 1; a < K; a++) 
+					for (int a = 0; a < K; a++) 
 					{
-						if (board[i][j+a] == mark)
+						if (horizontalBoard[i][j+a] == mark)
 						{
+							horizontalBoard[i][j+a] = BLANK;
 							b++;
 						}
-						else if (board[i][j+a] != BLANK) // must be the enemy
+						else if (horizontalBoard[i][j+a] != BLANK) // must be the enemy
 						{
 							b = -1;
 							break;
@@ -231,16 +235,61 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 				}
 
 				// Vertical
-				if (i >= 0+K)
+				if (i >= K-1)
 				{
 					int b = 0;
-					for (int a = 1; a < K; a++)
+					for (int a = 0; a < K; a++)
 					{
-						if (board[i-a][j] == mark)
+						if (verticalBoard[i-a][j] == mark)
 						{
+							verticalBoard[i-a][j] = BLANK;
 							b++;
 						}
-						else if (board[i-a][j] != BLANK) // must be the enemy
+						else if (verticalBoard[i-a][j] != BLANK) // must be the enemy
+						{
+							b = -1;
+							break;
+						}
+					}
+
+					if (b != -1)
+						segments[b]++;
+				}
+				
+				// Forward Diagonal
+				if (i >= K-1 && j <= N-K)
+				{
+					int b = 0;
+					for (int a = 0; a < K; a++)
+					{
+						if (forwardDiagonalBoard[i-a][j+a] == mark)
+						{
+							forwardDiagonalBoard[i-a][j+a] = BLANK;
+							b++;
+						}
+						else if (forwardDiagonalBoard[i-a][j+a] != BLANK) // must be the enemy
+						{
+							b = -1;
+							break;
+						}
+					}
+
+					if (b != -1)
+						segments[b]++;
+				}
+
+				// Backwards Diagonal
+				if (i >= K && j >= K - 1)
+				{
+					int b = 0;
+					for (int a = 0; a < K; a++)
+					{
+						if (backDiagonalBoard[i-a][j-a] == mark)
+						{
+							backDiagonalBoard[i-a][j-a] = BLANK;
+							b++;
+						}
+						else if (backDiagonalBoard[i-a][j-a] != BLANK) // must be the enemy
 						{
 							b = -1;
 							break;
