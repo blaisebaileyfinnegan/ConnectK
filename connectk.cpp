@@ -125,10 +125,31 @@ void ConnectK::nextMove(int &row, int &col)
 		}
 	}
 
+	int enemyBestRow = -1;
+	int enemyBestColumn = -1;
+
+	int enemyScore = MinimaxV2(board, humanMark, computerMark, 0, enemyBestRow, enemyBestColumn);
+
 	int rowMoveToMake = -1;
 	int columnMoveToMake = -1;
-	float idsSearchTime = 2.0f;
-	IDSMinimaxWithABPrune(board, rowMoveToMake, columnMoveToMake, idsSearchTime);
+
+	int myScore = MinimaxV2(board, computerMark, humanMark, 0, rowMoveToMake, columnMoveToMake);
+		
+#ifdef _DEBUG
+	_cprintf("Evaluation function for my move (%i, %i) returned: %i\n", rowMoveToMake, columnMoveToMake, this->evaluate(board, computerMark, humanMark, 0));
+	_cprintf("Evaluation function for enemy move (%i, %i) returned: %i\n", enemyBestRow, enemyBestColumn, this->evaluate(board, humanMark, computerMark, 0));
+#endif
+	if (enemyScore > myScore)
+	{
+		rowMoveToMake = enemyBestRow;
+		columnMoveToMake = enemyBestColumn;
+	}
+
+	//float idsSearchTime = 2.0f;
+	//IDSMinimaxWithABPrune(board, rowMoveToMake, columnMoveToMake, idsSearchTime);
+
+	CharVectorVector fake = board;
+	fake[2][5] = computerMark;
 
 	// record the move made by the AI
 	board[rowMoveToMake][columnMoveToMake] = computerMark;
@@ -136,60 +157,36 @@ void ConnectK::nextMove(int &row, int &col)
 	row = rowMoveToMake;
 	col = columnMoveToMake;
 
-#ifdef _DEBUG
-	_cprintf("Evaluation function for move (%i, %i) returned: %i\n", rowMoveToMake, columnMoveToMake, this->evaluate(board, computerMark, humanMark));
-#endif
+
 }
 
 // Takes any number of arguments and applies weight to it.
-// return INFINITY means MAKE THIS MOVE TO WIN
-int ConnectK::weigh(int *segments) const
+int ConnectK::weigh(int *segments, int depth) const
 {
-	if (segments[3] > 0)
-		return INFINITY;
-	else
+	int points = 0;
+	for (int i = 1; i <= K; i++)
 	{
-		int points = 0;
-		for (int i = 0; i < K; i++)
-		{
-			points += (segments[i]*pow(i+1, 2));
-		}
-		return points;
+		points += (segments[i]*pow(i, 4));
 	}
+	delete segments;
+	return points;
 }
 
 // Evaluation function mark agnostic
 // (own winning rows) - (opponent's winning rows)
 // board: The potential game state
-int ConnectK::evaluate(const CharVectorVector& board, char mark, char enemyMark, boolean weighted) const
+// depth: which move is it?
+int ConnectK::evaluate(const CharVectorVector& board, char mark, char enemyMark, int depth, boolean weighted) const
 {
-	int points = 0, enemyPoints = 0;
-	
-	if (!weighted)
-	{
-		// Search for squares
-		for (int row = M - 1; row >= 0 ; row--)
-		{
-			for (int col = 0; col < N; col++)
-			{
-				// We've found a piece that belongs to us
-				if (board[row][col] == mark) 
-					points += countWinningRectangles(board, row, col, mark);
-				else if (board[row][col] == enemyMark)
-					enemyPoints += countWinningRectangles(board, row, col, enemyMark);
-			}
-		}
-	}
-	else
-	{
-		points = weigh(countSegmentLengths(board, mark));
-		enemyPoints = weigh(countSegmentLengths(board, enemyMark));
-	}
+	int points = weigh(countSegmentLengths(board, mark), depth);
+	int enemyPoints = weigh(countSegmentLengths(board, enemyMark), depth);
 
+	/*
 #ifdef _DEBUG
 	_cprintf("\tMy points: %i\n", points);
 	_cprintf("\tOpponent's points: %i\n", enemyPoints);
 #endif
+	*/
 
 	return points - enemyPoints;
 }
@@ -198,10 +195,13 @@ int ConnectK::evaluate(const CharVectorVector& board, char mark, char enemyMark,
 // Brute forces every possible segment to allow for gravity off case
 int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) const
 {
-	int *segments = new int[K];
-	for (int i = 0; i < K; i++)
+	int *segments = new int[K+1];
+	for (int i = 0; i <= K; i++)
 		segments[i] = 0;
 
+	// We need to manipulate it
+	CharVectorVector fakeHorizontalBoard = board;
+	CharVectorVector fakeVerticalBoard = board;
 
 	// Start from the bottom left
 	for (int i = M - 1; i >= 0; i--)
@@ -210,17 +210,18 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 		{
 //			if (board[i][j] == mark) 
 //			{
-				// Start with horizontal (to the right)
+				// Start with horizontal (going towards the right)
 				if (j <= N-K)
 				{
 					int b = 0;
-					for (int a = 1; a < K; a++) 
+					for (int a = 0; a < K; a++) 
 					{
-						if (board[i][j+a] == mark)
+						if (fakeHorizontalBoard[i][j+a] == mark)
 						{
+							fakeHorizontalBoard[i][j+a] = BLANK;
 							b++;
 						}
-						else if (board[i][j+a] != BLANK) // must be the enemy
+						else if (fakeHorizontalBoard[i][j+a] != BLANK) // must be the enemy
 						{
 							b = -1;
 							break;
@@ -231,16 +232,17 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 				}
 
 				// Vertical
-				if (i >= 0+K)
+				if (i >= K-1)
 				{
 					int b = 0;
-					for (int a = 1; a < K; a++)
+					for (int a = 0; a < K; a++)
 					{
-						if (board[i-a][j] == mark)
+						if (fakeVerticalBoard[i-a][j] == mark)
 						{
+							fakeVerticalBoard[i-a][j] = BLANK;
 							b++;
 						}
-						else if (board[i-a][j] != BLANK) // must be the enemy
+						else if (fakeVerticalBoard[i-a][j] != BLANK) // must be the enemy
 						{
 							b = -1;
 							break;
@@ -263,104 +265,51 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 	return segments;
 }
 
-int ConnectK::countWinningRectangles(const CharVectorVector& board, int row, int col, char mark) const
+
+
+int ConnectK::MinimaxV2(CharVectorVector &state, char mark, char enemyMark, int depth, int &row, int &col, bool isMaxNode)
 {
-	int rectangles = 0;
+	// Cut off at arbitrary depth
+	if (depth == 2)
+		return evaluate(state, mark, enemyMark, depth);
 
-	// Count horizontal winning rectangles
-	for (int i = K - 1; i >= 0; i--)
+	int bestRow = -1, bestCol = -1, bestScore = -INFINITY;
+
+	for (int i = M - 1; i >= 0; i--)
 	{
-		if ((col - i) < 0)
-			continue;
-
-		bool winning = true;
-		for (int j = 0; j < K && winning; j++)
+		for (int j = 0; j < N; j++)
 		{
-			if ((col-i+j) >= N)
+			if (state[i][j] == BLANK)
 			{
-				winning = false;
-				break;
+				// If gravity is ON, check to make sure this isn't a floating block
+				if ( G && (i+1) < M && state[i+1][j] == BLANK)
+					continue;
+
+				CharVectorVector childState = state;
+				childState[i][j] = mark;
+				int score = MinimaxV2(childState, enemyMark, mark, depth + 1, bestRow, bestCol, !isMaxNode);
+
+				if (isMaxNode)
+					score = -score;
+
+				if (score > bestScore)
+				{
+					bestScore = score;
+					bestRow = i;
+					bestCol = j;
+				}
 			}
-
-			if (board[row][col-i+j] != BLANK && board[row][col-i+j] != mark)
-				winning = false;
 		}
-
-		if (winning)
-			rectangles++;
 	}
 
-	// Count vertical winning rectangles
-	for (int i = K - 1; i >= 0; i--)
-	{
-		if ((row + i) >= M)
-			continue;
 
-		bool winning = true;
-		for (int j = 0; j < K && winning; j++)
-		{
-			if ((row+i-j) < 0)
-			{
-				winning = false;
-				break;
-			}
+	if (bestRow == -1 || bestCol == -1)
+		return evaluate(state, mark, enemyMark, depth);
 
-			if (board[row+i-j][col] != BLANK && board[row+i-j][col] != mark)
-				winning = false;
-		}
-
-		if (winning)
-			rectangles++;
-	}
-
-	// Count diagonal winning rectangles coming from the bottom left
-	for (int i = K-1; i >= 0; i--)
-	{
-		if ( (row + i) >= M || (col - i) < 0  )
-			continue;
-
-		bool winning = true;
-		for (int j = 0; j < K && winning; j++)
-		{
-			if ((row+i-j) < 0 || (col-i+j) >= N)
-			{
-				winning = false;
-				break;
-			}
-
-			if (board[row+i-j][col-i+j] != BLANK && board[row+i-j][col-i+j] != mark)
-				winning = false;
-		}
-
-		if (winning)
-			rectangles++;
-	}
-
-	// Count diagonal winning rectangles coming from the bottom right
-	for (int i = K-1; i >= 0; i--)
-	{
-		if ( (row + i) >= M || (col + i) >= N  )
-			continue;
-
-		bool winning = true;
-		for (int j = 0; j < K && winning; j++)
-		{
-			if ((row+i-j) < 0 || (col+i-j) < 0)
-			{
-				winning = false;
-				break;
-			}
-
-			if (board[row+i-j][col+i-j] != BLANK && board[row+i-j][col+i-j] != mark)
-				winning = false;
-		}
-
-		if (winning)
-			rectangles++;
-	}
-
-	return rectangles;
+	row = bestRow, col = bestCol;
+	return evaluate(state, mark, enemyMark, depth);
 }
+
 
 void ConnectK::IDSMinimaxWithABPrune(CharVectorVector& state, int& rowMoveToMake, int& columnMoveToMake, const float idsSearchTime) const
 {
@@ -386,7 +335,7 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 	int currentBestMoveColumn = -1;
 
 	if (Cutoff(depth, DepthCutoff, timer))
-		return evaluate(state, computerMark, humanMark);
+		return evaluate(state, computerMark, humanMark, depth);
 
 	for (int col = 0; col < N; col++)
 	{

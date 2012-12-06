@@ -562,6 +562,6 @@ void CConnectDoc::GameLog(CString currentCompetitor, int x, int y)
 
 	logFile.Open("gamelog.txt", CFile::modeCreate | CFile::modeNoTruncate | CFile::modeWrite);
 	logFile.SeekToEnd();
-	logFile.WriteString(str);
+	//logFile.WriteString(str);
 	logFile.Close();
 }
