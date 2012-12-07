@@ -10,7 +10,7 @@ using namespace std;
 
 // constructor
 ConnectK::ConnectK()
-	: M(0), N(0), K(0), G(FALSE)
+	: M(0), N(0), K(0), G(FALSE), ABPruneEnabled(true)
 {
 }
 
@@ -128,7 +128,7 @@ void ConnectK::nextMove(int &row, int &col)
 	int rowMoveToMake = -1;
 	int columnMoveToMake = -1;
 	float idsSearchTime = 5.0f;
-	IDSMinimaxWithABPrune(board, rowMoveToMake, columnMoveToMake, idsSearchTime);
+	IDSMinimax(board, rowMoveToMake, columnMoveToMake, idsSearchTime);
 
 	// record the move made by the AI
 	board[rowMoveToMake][columnMoveToMake] = computerMark;
@@ -404,7 +404,7 @@ int ConnectK::countWinningRectangles(const CharVectorVector& board, int row, int
 	return rectangles;
 }
 
-void ConnectK::IDSMinimaxWithABPrune(CharVectorVector& state, int& rowMoveToMake, int& columnMoveToMake, const float idsSearchTime) const
+void ConnectK::IDSMinimax(CharVectorVector& state, int& rowMoveToMake, int& columnMoveToMake, const float idsSearchTime) const
 {
 	ExpirationTimer timer(idsSearchTime);
 	timer.Start();
@@ -419,6 +419,19 @@ void ConnectK::IDSMinimaxWithABPrune(CharVectorVector& state, int& rowMoveToMake
 #ifdef _DEBUG
 	_cprintf("AI IDS went to a depth of %i before stopping (may not have finished at this depth).\n", currentMaxDepth);
 #endif
+}
+
+bool ConnectK::ShouldABPrune(const int alpha, const int beta) const
+{
+	if (ABPruneEnabled && alpha >= beta)
+	{
+#ifdef _DEBUG				
+		_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
+#endif
+		return true;
+	}
+
+	return false;
 }
 
 int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, 
@@ -460,21 +473,15 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 					beta = min(beta, minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer));
 				}
 
-				if (alpha >= beta) // Prune the rest of the moves in the current column
+				if (ShouldABPrune(alpha, beta)) // Prune the rest of the moves in the current column
 				{
-#ifdef _DEBUG				
-					_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
-#endif
 					break;
 				}
 			}
 		}
 
-		if (alpha >= beta) // Prune the rest of the moves available at this state
+		if (ShouldABPrune(alpha, beta)) // Prune the rest of the moves available at this state
 		{
-#ifdef _DEBUG				
-			_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
-#endif
 			break;
 		}
 	}
