@@ -198,14 +198,7 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 		segments[i] = 0;
 
 	// We need to manipulate it
-	CharVectorVector horizontalBoard = board;
-	CharVectorVector verticalBoard = board;
-	CharVectorVector backDiagonalBoard = board;
-	CharVectorVector forwardDiagonalBoard = board;
-	CharVectorVector diagonalBoard = board;
-
-
-
+	//CharVectorVector horizontalBoard = board
 	// Start from the bottom left
 	for (int i = M - 1; i >= 0; i--)
 	{
@@ -219,12 +212,12 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 					int b = 0;
 					for (int a = 0; a < K; a++) 
 					{
-						if (horizontalBoard[i][j+a] == mark)
+						if (board[i][j+a] == mark)
 						{
-							horizontalBoard[i][j+a] = BLANK;
+							//horizontalBoard[i][j+a] = BLANK;
 							b++;
 						}
-						else if (horizontalBoard[i][j+a] != BLANK) // must be the enemy
+						else if (board[i][j+a] != BLANK) // must be the enemy
 						{
 							b = -1;
 							break;
@@ -240,12 +233,12 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 					int b = 0;
 					for (int a = 0; a < K; a++)
 					{
-						if (verticalBoard[i-a][j] == mark)
+						if (board[i-a][j] == mark)
 						{
-							verticalBoard[i-a][j] = BLANK;
+							//verticalBoard[i-a][j] = BLANK;
 							b++;
 						}
-						else if (verticalBoard[i-a][j] != BLANK) // must be the enemy
+						else if (board[i-a][j] != BLANK) // must be the enemy
 						{
 							b = -1;
 							break;
@@ -262,12 +255,12 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 					int b = 0;
 					for (int a = 0; a < K; a++)
 					{
-						if (forwardDiagonalBoard[i-a][j+a] == mark)
+						if (board[i-a][j+a] == mark)
 						{
-							forwardDiagonalBoard[i-a][j+a] = BLANK;
+							//forwardDiagonalBoard[i-a][j+a] = BLANK;
 							b++;
 						}
-						else if (forwardDiagonalBoard[i-a][j+a] != BLANK) // must be the enemy
+						else if (board[i-a][j+a] != BLANK) // must be the enemy
 						{
 							b = -1;
 							break;
@@ -284,12 +277,12 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 					int b = 0;
 					for (int a = 0; a < K; a++)
 					{
-						if (backDiagonalBoard[i-a][j-a] == mark)
+						if (board[i-a][j-a] == mark)
 						{
-							backDiagonalBoard[i-a][j-a] = BLANK;
+							//backDiagonalBoard[i-a][j-a] = BLANK;
 							b++;
 						}
-						else if (backDiagonalBoard[i-a][j-a] != BLANK) // must be the enemy
+						else if (board[i-a][j-a] != BLANK) // must be the enemy
 						{
 							b = -1;
 							break;
