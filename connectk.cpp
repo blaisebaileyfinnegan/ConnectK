@@ -198,14 +198,7 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 		segments[i] = 0;
 
 	// We need to manipulate it
-	CharVectorVector horizontalBoard = board;
-	CharVectorVector verticalBoard = board;
-	CharVectorVector backDiagonalBoard = board;
-	CharVectorVector forwardDiagonalBoard = board;
-	CharVectorVector diagonalBoard = board;
-
-
-
+	//CharVectorVector horizontalBoard = board
 	// Start from the bottom left
 	for (int i = M - 1; i >= 0; i--)
 	{
@@ -219,12 +212,12 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 					int b = 0;
 					for (int a = 0; a < K; a++) 
 					{
-						if (horizontalBoard[i][j+a] == mark)
+						if (board[i][j+a] == mark)
 						{
-							horizontalBoard[i][j+a] = BLANK;
+							//horizontalBoard[i][j+a] = BLANK;
 							b++;
 						}
-						else if (horizontalBoard[i][j+a] != BLANK) // must be the enemy
+						else if (board[i][j+a] != BLANK) // must be the enemy
 						{
 							b = -1;
 							break;
@@ -240,12 +233,12 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 					int b = 0;
 					for (int a = 0; a < K; a++)
 					{
-						if (verticalBoard[i-a][j] == mark)
+						if (board[i-a][j] == mark)
 						{
-							verticalBoard[i-a][j] = BLANK;
+							//verticalBoard[i-a][j] = BLANK;
 							b++;
 						}
-						else if (verticalBoard[i-a][j] != BLANK) // must be the enemy
+						else if (board[i-a][j] != BLANK) // must be the enemy
 						{
 							b = -1;
 							break;
@@ -262,12 +255,12 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 					int b = 0;
 					for (int a = 0; a < K; a++)
 					{
-						if (forwardDiagonalBoard[i-a][j+a] == mark)
+						if (board[i-a][j+a] == mark)
 						{
-							forwardDiagonalBoard[i-a][j+a] = BLANK;
+							//forwardDiagonalBoard[i-a][j+a] = BLANK;
 							b++;
 						}
-						else if (forwardDiagonalBoard[i-a][j+a] != BLANK) // must be the enemy
+						else if (board[i-a][j+a] != BLANK) // must be the enemy
 						{
 							b = -1;
 							break;
@@ -284,12 +277,12 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 					int b = 0;
 					for (int a = 0; a < K; a++)
 					{
-						if (backDiagonalBoard[i-a][j-a] == mark)
+						if (board[i-a][j-a] == mark)
 						{
-							backDiagonalBoard[i-a][j-a] = BLANK;
+							//backDiagonalBoard[i-a][j-a] = BLANK;
 							b++;
 						}
-						else if (backDiagonalBoard[i-a][j-a] != BLANK) // must be the enemy
+						else if (board[i-a][j-a] != BLANK) // must be the enemy
 						{
 							b = -1;
 							break;
@@ -439,39 +432,41 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 
 	for (int col = 0; col < N; col++)
 	{
-		if (state[0][col] == BLANK) //If column is not full
+		for (int row = M - 1; row >= 0; row--)
 		{
-			int currentRow = M - 1;
-			while (state[currentRow][col] != BLANK) //Find the row of the column the next piece will be placed, starting at the bottom
-				currentRow--;
-
-			CharVectorVector childState = state;
-			char markToMake = (isMaxNode) ? computerMark : humanMark;
-			childState[currentRow][col] = markToMake; //Add the move for the child state
-
-			if (isMaxNode)
+			if (state[row][col] == BLANK) //If column is not full
 			{
-				int childValue = minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer);
-				// If at the top level, and this is the highest valued child so far, record the move to get there
-				if (depth == 0 && childValue > alpha)
+				if (G && (row + 1) < M && state[row + 1][col] == BLANK)
+					continue;
+
+				CharVectorVector childState = state;
+				char markToMake = (isMaxNode) ? computerMark : humanMark;
+				childState[row][col] = markToMake; //Add the move for the child state
+
+				if (isMaxNode)
 				{
-					currentBestMoveRow = currentRow;
-					currentBestMoveColumn = col;
+					int childValue = minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer);
+					// If at the top level, and this is the highest valued child so far, record the move to get there
+					if (depth == 0 && childValue > alpha)
+					{
+						currentBestMoveRow = row;
+						currentBestMoveColumn = col;
+					}
+					// Update alpha value
+					alpha = max(alpha, childValue);
 				}
-				// Update alpha value
-				alpha = max(alpha, childValue);
-			}
-			else
-			{
-				beta = min(beta, minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer));
-			}
+				else
+				{
+					beta = min(beta, minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer));
+				}
 
-			if (alpha >= beta)
-			{
-#ifdef _DEBUG				
-				_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
-#endif
-				break;
+				if (alpha >= beta)
+				{
+	#ifdef _DEBUG				
+					_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
+	#endif
+					break;
+				}
 			}
 		}
 	}
