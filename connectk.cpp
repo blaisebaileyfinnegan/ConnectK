@@ -127,7 +127,7 @@ void ConnectK::nextMove(int &row, int &col)
 
 	int rowMoveToMake = -1;
 	int columnMoveToMake = -1;
-	float idsSearchTime = 2.0f;
+	float idsSearchTime = 5.0f;
 	IDSMinimaxWithABPrune(board, rowMoveToMake, columnMoveToMake, idsSearchTime);
 
 	// record the move made by the AI
@@ -183,7 +183,7 @@ int ConnectK::weigh(int *segments) const
 	int points = 0;
 	for (int i = 1; i <= K; i++)
 	{
-		points += (segments[i]*pow(i, 4));
+		points += (segments[i]*pow(i, 4.0f));
 	}
 	delete segments;
 	return points;
@@ -434,7 +434,7 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 	int currentBestMoveRow = -1;
 	int currentBestMoveColumn = -1;
 
-	if (Cutoff(depth, DepthCutoff, timer))
+	if (Cutoff(state, depth, DepthCutoff, timer))
 		return evaluate(state, computerMark, humanMark);
 
 	for (int col = 0; col < N; col++)
@@ -494,7 +494,25 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 	return (isMaxNode) ? alpha : beta;
 }
 
-bool ConnectK::Cutoff(const int currentDepth, const int DepthCutoff, const ExpirationTimer& timer) const
+bool ConnectK::IsStateFull(const CharVectorVector& state) const
 {
-	return (currentDepth >= DepthCutoff) || timer.HasExpired();
+	bool stateFull = true;
+	std::vector<char>::const_iterator iter;
+
+	for (int i = 0; i < M; i++)
+	{
+		iter = find(state[i].begin(), state[i].end(), BLANK);
+		if (iter != state[i].end())
+		{
+			stateFull = false;
+			break;
+		}
+	}
+
+	return stateFull;
+}
+
+bool ConnectK::Cutoff(const CharVectorVector& state, const int currentDepth, const int DepthCutoff, const ExpirationTimer& timer) const
+{
+	return (currentDepth >= DepthCutoff) || timer.HasExpired() || IsStateFull(state);
 }
