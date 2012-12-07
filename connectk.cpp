@@ -432,39 +432,41 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 
 	for (int col = 0; col < N; col++)
 	{
-		if (state[0][col] == BLANK) //If column is not full
+		for (int row = M - 1; row >= 0; row--)
 		{
-			int currentRow = M - 1;
-			while (state[currentRow][col] != BLANK) //Find the row of the column the next piece will be placed, starting at the bottom
-				currentRow--;
-
-			CharVectorVector childState = state;
-			char markToMake = (isMaxNode) ? computerMark : humanMark;
-			childState[currentRow][col] = markToMake; //Add the move for the child state
-
-			if (isMaxNode)
+			if (state[row][col] == BLANK) //If column is not full
 			{
-				int childValue = minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer);
-				// If at the top level, and this is the highest valued child so far, record the move to get there
-				if (depth == 0 && childValue > alpha)
+				if (G && (row + 1) < M && state[row + 1][col] == BLANK)
+					continue;
+
+				CharVectorVector childState = state;
+				char markToMake = (isMaxNode) ? computerMark : humanMark;
+				childState[row][col] = markToMake; //Add the move for the child state
+
+				if (isMaxNode)
 				{
-					currentBestMoveRow = currentRow;
-					currentBestMoveColumn = col;
+					int childValue = minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer);
+					// If at the top level, and this is the highest valued child so far, record the move to get there
+					if (depth == 0 && childValue > alpha)
+					{
+						currentBestMoveRow = row;
+						currentBestMoveColumn = col;
+					}
+					// Update alpha value
+					alpha = max(alpha, childValue);
 				}
-				// Update alpha value
-				alpha = max(alpha, childValue);
-			}
-			else
-			{
-				beta = min(beta, minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer));
-			}
+				else
+				{
+					beta = min(beta, minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer));
+				}
 
-			if (alpha >= beta)
-			{
-#ifdef _DEBUG				
-				_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
-#endif
-				break;
+				if (alpha >= beta)
+				{
+	#ifdef _DEBUG				
+					_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
+	#endif
+					break;
+				}
 			}
 		}
 	}
