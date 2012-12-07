@@ -437,7 +437,7 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 			if (state[row][col] == BLANK) //If column is not full
 			{
 				if (G && (row + 1) < M && state[row + 1][col] == BLANK)
-					continue;
+					break; // No more moves can be found in this column with gravity on
 
 				CharVectorVector childState = state;
 				char markToMake = (isMaxNode) ? computerMark : humanMark;
@@ -460,14 +460,22 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 					beta = min(beta, minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer));
 				}
 
-				if (alpha >= beta)
+				if (alpha >= beta) // Prune the rest of the moves in the current column
 				{
-	#ifdef _DEBUG				
+#ifdef _DEBUG				
 					_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
-	#endif
+#endif
 					break;
 				}
 			}
+		}
+
+		if (alpha >= beta) // Prune the rest of the moves available at this state
+		{
+#ifdef _DEBUG				
+			_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
+#endif
+			break;
 		}
 	}
 
