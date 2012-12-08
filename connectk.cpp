@@ -185,7 +185,7 @@ int ConnectK::weigh(int *segments) const
 	{
 		points += (segments[i]*pow(i, 4.0f));
 	}
-	delete segments;
+	delete [] segments;
 	return points;
 }
 
@@ -305,6 +305,7 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 	return segments;
 }
 
+// Minimal evaluation function
 int ConnectK::countWinningRectangles(const CharVectorVector& board, int row, int col, char mark) const
 {
 	int rectangles = 0;
@@ -569,5 +570,18 @@ bool ConnectK::IsStateFull(const CharVectorVector& state) const
 // Returns:		True if the search should stop at this state and not evaluate any of its child states.
 bool ConnectK::Cutoff(const CharVectorVector& state, const int currentDepth, const int DepthCutoff, const ExpirationTimer& timer) const
 {
-	return (currentDepth >= DepthCutoff) || timer.HasExpired() || IsStateFull(state);
+	return (currentDepth >= DepthCutoff) || timer.HasExpired() || IsStateFull(state) || GameWinningMoveFound(state);
+}
+
+bool ConnectK::GameWinningMoveFound(const CharVectorVector& state) const
+{
+	int* lengths = countSegmentLengths(state, humanMark);
+	bool gameWinningMove = false;
+
+	if (lengths[K] > 0) // Greater than 0 if a winning move was found
+		gameWinningMove = true;
+
+	delete [] lengths;
+
+	return gameWinningMove;
 }

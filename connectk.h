@@ -43,5 +43,6 @@ private:
 	int minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, const int DepthCutoff, const ExpirationTimer& timer) const;
 	bool Cutoff(const CharVectorVector& state, const int currentDepth, const int DepthCutoff, const ExpirationTimer& timer) const;
 	bool IsStateFull(const CharVectorVector& state) const;
+	bool GameWinningMoveFound(const CharVectorVector& state) const;
 	bool ShouldABPrune(const int alpha, const int beta) const;
 };
