@@ -404,6 +404,15 @@ int ConnectK::countWinningRectangles(const CharVectorVector& board, int row, int
 	return rectangles;
 }
 
+// Purpose:     Performs a minimax search using IDS. Returns results of the deepest, finished search depth.
+//
+// Parameters:	&state				The current state of the game
+//				&rowMoveToMake		Used as return parameter
+//				&columnMoveToMake	Used as return parameter
+//				idsSearchTime		Time length IDS should run for
+//
+// Returns:		&rowMoveToMake		place the row value of the move that should be made by your AI search in this variable
+//				&columnMoveToMake	place the column value of the move that should be made by your AI in this variable
 void ConnectK::IDSMinimax(CharVectorVector& state, int& rowMoveToMake, int& columnMoveToMake, const float idsSearchTime) const
 {
 	ExpirationTimer timer(idsSearchTime);
@@ -421,6 +430,14 @@ void ConnectK::IDSMinimax(CharVectorVector& state, int& rowMoveToMake, int& colu
 #endif
 }
 
+// Purpose:     Returns whether or not a prune should take place.
+//
+// Parameters:	alpha	Alpha value for AB prune check
+//				beta	Beta value for AB prune check
+//
+// Returns:		boolean representing whether an AB prune should take place
+//
+// Note: ABPruneEnabled must be true for the ConnectK object for this to return true.
 bool ConnectK::ShouldABPrune(const int alpha, const int beta) const
 {
 	if (ABPruneEnabled && alpha >= beta)
@@ -434,10 +451,24 @@ bool ConnectK::ShouldABPrune(const int alpha, const int beta) const
 	return false;
 }
 
+// Purpose:     Performs a minimax search to depth specified. Can return early with no results if timer expires before search finishes.
+//
+// Parameters:	&state				The current state of the game
+//				alpha				Alpha value for current state
+//				beta				Beta value for current state
+//				depth				Current depth of search.
+//				isMaxNode			Whether current state is a max node in regards to a minimax search. (max nodes simulate the AI's possible moves)
+//				&rowMoveToMake		Used as return parameter
+//				&columnMoveToMake	Used as return parameter
+//				DepthCutoff			Max depth to search
+//				&timer				Timer used to check if the search should continue (will stop searching if timer expires)
+//
+// Returns:		&rowMoveToMake		place the row value of the move that should be made by your AI search in this variable
+//				&columnMoveToMake	place the column value of the move that should be made by your AI in this variable
 int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, 
 	const int DepthCutoff, const ExpirationTimer& timer) const
 {
-	int currentBestMoveRow = -1;
+	int currentBestMoveRow = -1; // Used to keep track of the move that resulted in the best move at this level
 	int currentBestMoveColumn = -1;
 
 	if (Cutoff(state, depth, DepthCutoff, timer))
@@ -447,12 +478,12 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 	{
 		for (int row = M - 1; row >= 0; row--)
 		{
-			if (state[row][col] == BLANK) //If column is not full
+			if (state[row][col] == BLANK) //If space is empty
 			{
 				if (G && (row + 1) < M && state[row + 1][col] == BLANK)
 					break; // No more moves can be found in this column with gravity on
 
-				CharVectorVector childState = state;
+				CharVectorVector childState = state; // Create a child state to continue searching on
 				char markToMake = (isMaxNode) ? computerMark : humanMark;
 				childState[row][col] = markToMake; //Add the move for the child state
 
@@ -470,6 +501,7 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 				}
 				else
 				{
+					// Update beta value
 					beta = min(beta, minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer));
 				}
 
@@ -504,6 +536,11 @@ int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int de
 	return (isMaxNode) ? alpha : beta;
 }
 
+// Purpose:     Determines if the state given has any empty spaces. Returns true if no empty spaces are found.
+//
+// Parameters:	&state		The current state of the game
+//
+// Returns:		True if the state given has no empty spaces; otherwise, returns false.
 bool ConnectK::IsStateFull(const CharVectorVector& state) const
 {
 	bool stateFull = true;
@@ -522,6 +559,14 @@ bool ConnectK::IsStateFull(const CharVectorVector& state) const
 	return stateFull;
 }
 
+// Purpose:     To determine if a state should continue to be evaluated (its child states), or to stop searching at this state.
+//
+// Parameters:	&state				The current state of the game
+//				depth				Current depth of search
+//				DepthCutoff			Max depth to search
+//				&timer				Timer used to check if the search should continue (will signal to Cutoff searching if timer expires)
+//
+// Returns:		True if the search should stop at this state and not evaluate any of its child states.
 bool ConnectK::Cutoff(const CharVectorVector& state, const int currentDepth, const int DepthCutoff, const ExpirationTimer& timer) const
 {
 	return (currentDepth >= DepthCutoff) || timer.HasExpired() || IsStateFull(state);
