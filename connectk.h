@@ -35,14 +35,16 @@ public:
 	void nextMove(int &row, int &col);
 
 private:
+	void IDSMinimax(CharVectorVector& state, int& rowMoveToMake, int& columnMoveToMake, const float idsSearchTime) const;
+	int Minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, const int DepthCutoff, const ExpirationTimer& timer) const;
+	bool ShouldABPrune(const int alpha, const int beta) const;
+
+	bool IsStateFull(const CharVectorVector& state) const;
+	bool Cutoff(const CharVectorVector& state, const int currentDepth, const int DepthCutoff, const ExpirationTimer& timer) const;
+	bool GameWinningMoveFound(const CharVectorVector& state) const;
+
 	int weigh(int *segments) const;
 	int *countSegmentLengths(const CharVectorVector& board, char mark) const;
 	int countWinningRectangles(const CharVectorVector& board, int row, int col, char mark) const;
 	int evaluate(const CharVectorVector& board, char mark, char enemyMark, boolean weighted = true) const;
-	void IDSMinimax(CharVectorVector& state, int& rowMoveToMake, int& columnMoveToMake, const float idsSearchTime) const;
-	int minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, const int DepthCutoff, const ExpirationTimer& timer) const;
-	bool Cutoff(const CharVectorVector& state, const int currentDepth, const int DepthCutoff, const ExpirationTimer& timer) const;
-	bool IsStateFull(const CharVectorVector& state) const;
-	bool GameWinningMoveFound(const CharVectorVector& state) const;
-	bool ShouldABPrune(const int alpha, const int beta) const;
 };

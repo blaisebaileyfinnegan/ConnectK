@@ -141,40 +141,190 @@ void ConnectK::nextMove(int &row, int &col)
 #endif
 }
 
-// Evaluation function mark agnostic
-// (own winning rows) - (opponent's winning rows)
-// board: The potential game state
-int ConnectK::evaluate(const CharVectorVector& board, char mark, char enemyMark, boolean weighted) const
+// Purpose:     Performs a minimax search using IDS. Returns results of the deepest, finished search depth.
+//
+// Parameters:	&state				The current state of the game
+//				&rowMoveToMake		Used as return parameter
+//				&columnMoveToMake	Used as return parameter
+//				idsSearchTime		Time length IDS should run for
+//
+// Returns:		&rowMoveToMake		place the row value of the move that should be made by your AI search in this variable
+//				&columnMoveToMake	place the column value of the move that should be made by your AI in this variable
+void ConnectK::IDSMinimax(CharVectorVector& state, int& rowMoveToMake, int& columnMoveToMake, const float idsSearchTime) const
 {
-	int points = 0, enemyPoints = 0;
-	
-	if (!weighted)
+	ExpirationTimer timer(idsSearchTime);
+	timer.Start();
+
+	int currentMaxDepth = -1;
+	while (!timer.HasExpired())
 	{
-		// Search for squares
-		for (int row = M - 1; row >= 0 ; row--)
-		{
-			for (int col = 0; col < N; col++)
-			{
-				// We've found a piece that belongs to us
-				if (board[row][col] == mark) 
-					points += countWinningRectangles(board, row, col, mark);
-				else if (board[row][col] == enemyMark)
-					enemyPoints += countWinningRectangles(board, row, col, enemyMark);
-			}
-		}
-	}
-	else
-	{
-		points = weigh(countSegmentLengths(board, mark));
-		enemyPoints = weigh(countSegmentLengths(board, enemyMark));
+		++currentMaxDepth;
+		int valueOfBestMove = Minimax(state, -INFINITY, INFINITY, 0, true, rowMoveToMake, columnMoveToMake, currentMaxDepth, timer);
 	}
 
 #ifdef _DEBUG
-	_cprintf("\tMy points: %i\n", points);
-	_cprintf("\tOpponent's points: %i\n", enemyPoints);
+	_cprintf("AI IDS went to a depth of %i before stopping (may not have finished at this depth).\n", currentMaxDepth);
 #endif
+}
 
-	return points - enemyPoints;
+// Purpose:     Returns whether or not a prune should take place.
+//
+// Parameters:	alpha	Alpha value for AB prune check
+//				beta	Beta value for AB prune check
+//
+// Returns:		boolean representing whether an AB prune should take place
+//
+// Note: ABPruneEnabled must be true for the ConnectK object for this to return true.
+bool ConnectK::ShouldABPrune(const int alpha, const int beta) const
+{
+	if (ABPruneEnabled && alpha >= beta)
+	{
+#ifdef _DEBUG				
+		_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
+#endif
+		return true;
+	}
+
+	return false;
+}
+
+// Purpose:     Performs a minimax search to depth specified. Can return early with no results if timer expires before search finishes.
+//
+// Parameters:	&state				The current state of the game
+//				alpha				Alpha value for current state
+//				beta				Beta value for current state
+//				depth				Current depth of search.
+//				isMaxNode			Whether current state is a max node in regards to a minimax search. (max nodes simulate the AI's possible moves)
+//				&rowMoveToMake		Used as return parameter
+//				&columnMoveToMake	Used as return parameter
+//				DepthCutoff			Max depth to search
+//				&timer				Timer used to check if the search should continue (will stop searching if timer expires)
+//
+// Returns:		&rowMoveToMake		place the row value of the move that should be made by your AI search in this variable
+//				&columnMoveToMake	place the column value of the move that should be made by your AI in this variable
+int ConnectK::Minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, 
+	const int DepthCutoff, const ExpirationTimer& timer) const
+{
+	int currentBestMoveRow = -1; // Used to keep track of the move that resulted in the best move at this level
+	int currentBestMoveColumn = -1;
+
+	if (Cutoff(state, depth, DepthCutoff, timer))
+		return evaluate(state, computerMark, humanMark);
+
+	for (int col = 0; col < N; col++)
+	{
+		for (int row = M - 1; row >= 0; row--)
+		{
+			if (state[row][col] == BLANK) //If space is empty
+			{
+				if (G && (row + 1) < M && state[row + 1][col] == BLANK)
+					break; // No more moves can be found in this column with gravity on
+
+				CharVectorVector childState = state; // Create a child state to continue searching on
+				char markToMake = (isMaxNode) ? computerMark : humanMark;
+				childState[row][col] = markToMake; //Add the move for the child state
+
+				if (isMaxNode)
+				{
+					int childValue = Minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer);
+					// If at the top level, and this is the highest valued child so far, record the move to get there
+					if (depth == 0 && childValue > alpha)
+					{
+						currentBestMoveRow = row;
+						currentBestMoveColumn = col;
+					}
+					// Update alpha value
+					alpha = max(alpha, childValue);
+				}
+				else
+				{
+					// Update beta value
+					beta = min(beta, Minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer));
+				}
+
+				if (ShouldABPrune(alpha, beta)) // Prune the rest of the moves in the current column
+				{
+					break;
+				}
+			}
+		}
+
+		if (ShouldABPrune(alpha, beta)) // Prune the rest of the moves available at this state
+		{
+			break;
+		}
+	}
+
+	if (depth == 0) // If this search finished in time, record the result
+	{
+		if (!timer.HasExpired())
+		{
+			rowMoveToMake = currentBestMoveRow;
+			columnMoveToMake = currentBestMoveColumn;
+		}
+		else
+		{
+#ifdef _DEBUG
+			_cprintf("Search of depth %i did not finish in time.\n", DepthCutoff);
+#endif
+		}
+	}
+
+	return (isMaxNode) ? alpha : beta;
+}
+
+// Purpose:     Determines if the state given has any empty spaces. Returns true if no empty spaces are found.
+//
+// Parameters:	&state		The current state of the game
+//
+// Returns:		True if the state given has no empty spaces; otherwise, returns false.
+bool ConnectK::IsStateFull(const CharVectorVector& state) const
+{
+	bool stateFull = true;
+	std::vector<char>::const_iterator iter;
+
+	for (int i = 0; i < M; i++)
+	{
+		iter = find(state[i].begin(), state[i].end(), BLANK);
+		if (iter != state[i].end())
+		{
+			stateFull = false;
+			break;
+		}
+	}
+
+	return stateFull;
+}
+
+// Purpose:     To determine if a state should continue to be evaluated (its child states), or to stop searching at this state.
+//
+// Parameters:	&state				The current state of the game
+//				depth				Current depth of search
+//				DepthCutoff			Max depth to search
+//				&timer				Timer used to check if the search should continue (will signal to Cutoff searching if timer expires)
+//
+// Returns:		True if the search should stop at this state and not evaluate any of its child states.
+bool ConnectK::Cutoff(const CharVectorVector& state, const int currentDepth, const int DepthCutoff, const ExpirationTimer& timer) const
+{
+	return (currentDepth >= DepthCutoff) || timer.HasExpired() || IsStateFull(state) || GameWinningMoveFound(state);
+}
+
+// Purpose:     To determine if there is a winning player on a given state.
+//
+// Parameters:	&state		The state to check
+//
+// Returns:		True if a player has K in a row in the state
+bool ConnectK::GameWinningMoveFound(const CharVectorVector& state) const
+{
+	int* lengths = countSegmentLengths(state, humanMark);
+	bool gameWinningMove = false;
+
+	if (lengths[K] > 0) // Greater than 0 if a winning move was found
+		gameWinningMove = true;
+
+	delete [] lengths;
+
+	return gameWinningMove;
 }
 
 // Takes any number of arguments and applies weight to it.
@@ -197,110 +347,98 @@ int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) con
 	for (int i = 0; i <= K; i++)
 		segments[i] = 0;
 
-	// We need to manipulate it
-	//CharVectorVector horizontalBoard = board
 	// Start from the bottom left
 	for (int i = M - 1; i >= 0; i--)
 	{
 		for (int j = 0; j < N; j++)
 		{
-//			if (board[i][j] == mark) 
-//			{
-				// Start with horizontal (going towards the right)
-				if (j <= N-K)
+			if (j <= N-K)
+			{
+				int b = 0;
+				for (int a = 0; a < K; a++) 
 				{
-					int b = 0;
-					for (int a = 0; a < K; a++) 
+					if (board[i][j+a] == mark)
 					{
-						if (board[i][j+a] == mark)
-						{
-							//horizontalBoard[i][j+a] = BLANK;
-							b++;
-						}
-						else if (board[i][j+a] != BLANK) // must be the enemy
-						{
-							b = -1;
-							break;
-						}
+						//horizontalBoard[i][j+a] = BLANK;
+						b++;
 					}
-					if (b != -1)
-						segments[b]++;
+					else if (board[i][j+a] != BLANK) // must be the enemy
+					{
+						b = -1;
+						break;
+					}
+				}
+				if (b != -1)
+					segments[b]++;
+			}
+
+			// Vertical
+			if (i >= K-1)
+			{
+				int b = 0;
+				for (int a = 0; a < K; a++)
+				{
+					if (board[i-a][j] == mark)
+					{
+						//verticalBoard[i-a][j] = BLANK;
+						b++;
+					}
+					else if (board[i-a][j] != BLANK) // must be the enemy
+					{
+						b = -1;
+						break;
+					}
 				}
 
-				// Vertical
-				if (i >= K-1)
-				{
-					int b = 0;
-					for (int a = 0; a < K; a++)
-					{
-						if (board[i-a][j] == mark)
-						{
-							//verticalBoard[i-a][j] = BLANK;
-							b++;
-						}
-						else if (board[i-a][j] != BLANK) // must be the enemy
-						{
-							b = -1;
-							break;
-						}
-					}
-
-					if (b != -1)
-						segments[b]++;
-				}
+				if (b != -1)
+					segments[b]++;
+			}
 				
-				// Forward Diagonal
-				if (i >= K-1 && j <= N-K)
+			// Forward Diagonal
+			if (i >= K-1 && j <= N-K)
+			{
+				int b = 0;
+				for (int a = 0; a < K; a++)
 				{
-					int b = 0;
-					for (int a = 0; a < K; a++)
+					if (board[i-a][j+a] == mark)
 					{
-						if (board[i-a][j+a] == mark)
-						{
-							//forwardDiagonalBoard[i-a][j+a] = BLANK;
-							b++;
-						}
-						else if (board[i-a][j+a] != BLANK) // must be the enemy
-						{
-							b = -1;
-							break;
-						}
+						//forwardDiagonalBoard[i-a][j+a] = BLANK;
+						b++;
 					}
-
-					if (b != -1)
-						segments[b]++;
+					else if (board[i-a][j+a] != BLANK) // must be the enemy
+					{
+						b = -1;
+						break;
+					}
 				}
 
-				// Backwards Diagonal
-				if (i >= K && j >= K - 1)
-				{
-					int b = 0;
-					for (int a = 0; a < K; a++)
-					{
-						if (board[i-a][j-a] == mark)
-						{
-							//backDiagonalBoard[i-a][j-a] = BLANK;
-							b++;
-						}
-						else if (board[i-a][j-a] != BLANK) // must be the enemy
-						{
-							b = -1;
-							break;
-						}
-					}
+				if (b != -1)
+					segments[b]++;
+			}
 
-					if (b != -1)
-						segments[b]++;
+			// Backwards Diagonal
+			if (i >= K && j >= K - 1)
+			{
+				int b = 0;
+				for (int a = 0; a < K; a++)
+				{
+					if (board[i-a][j-a] == mark)
+					{
+						//backDiagonalBoard[i-a][j-a] = BLANK;
+						b++;
+					}
+					else if (board[i-a][j-a] != BLANK) // must be the enemy
+					{
+						b = -1;
+						break;
+					}
 				}
-//			}
+
+				if (b != -1)
+					segments[b]++;
+			}
 		}
 	}
-
-	// Right now, the array is inverted. We need to invert it to return an array according the the method signature comment above
-	//for (int i = 0, temp = segments[K-1-i]; i < K || K-1-i <= i; i++, temp = segments[K-1-i]) {
-	//	segments[K-1-i] = segments[i];
-	//	segments[i] = temp;
-	//}
 
 	return segments;
 }
@@ -405,183 +543,38 @@ int ConnectK::countWinningRectangles(const CharVectorVector& board, int row, int
 	return rectangles;
 }
 
-// Purpose:     Performs a minimax search using IDS. Returns results of the deepest, finished search depth.
-//
-// Parameters:	&state				The current state of the game
-//				&rowMoveToMake		Used as return parameter
-//				&columnMoveToMake	Used as return parameter
-//				idsSearchTime		Time length IDS should run for
-//
-// Returns:		&rowMoveToMake		place the row value of the move that should be made by your AI search in this variable
-//				&columnMoveToMake	place the column value of the move that should be made by your AI in this variable
-void ConnectK::IDSMinimax(CharVectorVector& state, int& rowMoveToMake, int& columnMoveToMake, const float idsSearchTime) const
+// Evaluation function mark agnostic
+// (own winning rows) - (opponent's winning rows)
+// board: The potential game state
+int ConnectK::evaluate(const CharVectorVector& board, char mark, char enemyMark, boolean weighted) const
 {
-	ExpirationTimer timer(idsSearchTime);
-	timer.Start();
-
-	int currentMaxDepth = -1;
-	while (!timer.HasExpired())
+	int points = 0, enemyPoints = 0;
+	
+	if (!weighted)
 	{
-		++currentMaxDepth;
-		int valueOfBestMove = minimax(state, -INFINITY, INFINITY, 0, true, rowMoveToMake, columnMoveToMake, currentMaxDepth, timer);
-	}
-
-#ifdef _DEBUG
-	_cprintf("AI IDS went to a depth of %i before stopping (may not have finished at this depth).\n", currentMaxDepth);
-#endif
-}
-
-// Purpose:     Returns whether or not a prune should take place.
-//
-// Parameters:	alpha	Alpha value for AB prune check
-//				beta	Beta value for AB prune check
-//
-// Returns:		boolean representing whether an AB prune should take place
-//
-// Note: ABPruneEnabled must be true for the ConnectK object for this to return true.
-bool ConnectK::ShouldABPrune(const int alpha, const int beta) const
-{
-	if (ABPruneEnabled && alpha >= beta)
-	{
-#ifdef _DEBUG				
-		_cprintf("Pruning with alpha %i and beta %i", alpha, beta);
-#endif
-		return true;
-	}
-
-	return false;
-}
-
-// Purpose:     Performs a minimax search to depth specified. Can return early with no results if timer expires before search finishes.
-//
-// Parameters:	&state				The current state of the game
-//				alpha				Alpha value for current state
-//				beta				Beta value for current state
-//				depth				Current depth of search.
-//				isMaxNode			Whether current state is a max node in regards to a minimax search. (max nodes simulate the AI's possible moves)
-//				&rowMoveToMake		Used as return parameter
-//				&columnMoveToMake	Used as return parameter
-//				DepthCutoff			Max depth to search
-//				&timer				Timer used to check if the search should continue (will stop searching if timer expires)
-//
-// Returns:		&rowMoveToMake		place the row value of the move that should be made by your AI search in this variable
-//				&columnMoveToMake	place the column value of the move that should be made by your AI in this variable
-int ConnectK::minimax(const CharVectorVector& state, int alpha, int beta, int depth, bool isMaxNode, int& rowMoveToMake, int& columnMoveToMake, 
-	const int DepthCutoff, const ExpirationTimer& timer) const
-{
-	int currentBestMoveRow = -1; // Used to keep track of the move that resulted in the best move at this level
-	int currentBestMoveColumn = -1;
-
-	if (Cutoff(state, depth, DepthCutoff, timer))
-		return evaluate(state, computerMark, humanMark);
-
-	for (int col = 0; col < N; col++)
-	{
-		for (int row = M - 1; row >= 0; row--)
+		// Search for squares
+		for (int row = M - 1; row >= 0 ; row--)
 		{
-			if (state[row][col] == BLANK) //If space is empty
+			for (int col = 0; col < N; col++)
 			{
-				if (G && (row + 1) < M && state[row + 1][col] == BLANK)
-					break; // No more moves can be found in this column with gravity on
-
-				CharVectorVector childState = state; // Create a child state to continue searching on
-				char markToMake = (isMaxNode) ? computerMark : humanMark;
-				childState[row][col] = markToMake; //Add the move for the child state
-
-				if (isMaxNode)
-				{
-					int childValue = minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer);
-					// If at the top level, and this is the highest valued child so far, record the move to get there
-					if (depth == 0 && childValue > alpha)
-					{
-						currentBestMoveRow = row;
-						currentBestMoveColumn = col;
-					}
-					// Update alpha value
-					alpha = max(alpha, childValue);
-				}
-				else
-				{
-					// Update beta value
-					beta = min(beta, minimax(childState, alpha, beta, depth + 1, !isMaxNode, rowMoveToMake, columnMoveToMake, DepthCutoff, timer));
-				}
-
-				if (ShouldABPrune(alpha, beta)) // Prune the rest of the moves in the current column
-				{
-					break;
-				}
+				// We've found a piece that belongs to us
+				if (board[row][col] == mark) 
+					points += countWinningRectangles(board, row, col, mark);
+				else if (board[row][col] == enemyMark)
+					enemyPoints += countWinningRectangles(board, row, col, enemyMark);
 			}
 		}
-
-		if (ShouldABPrune(alpha, beta)) // Prune the rest of the moves available at this state
-		{
-			break;
-		}
+	}
+	else
+	{
+		points = weigh(countSegmentLengths(board, mark));
+		enemyPoints = weigh(countSegmentLengths(board, enemyMark));
 	}
 
-	if (depth == 0) // If this search finished in time, record the result
-	{
-		if (!timer.HasExpired())
-		{
-			rowMoveToMake = currentBestMoveRow;
-			columnMoveToMake = currentBestMoveColumn;
-		}
-		else
-		{
 #ifdef _DEBUG
-			_cprintf("Search of depth %i did not finish in time.\n", DepthCutoff);
+	_cprintf("\tMy points: %i\n", points);
+	_cprintf("\tOpponent's points: %i\n", enemyPoints);
 #endif
-		}
-	}
 
-	return (isMaxNode) ? alpha : beta;
-}
-
-// Purpose:     Determines if the state given has any empty spaces. Returns true if no empty spaces are found.
-//
-// Parameters:	&state		The current state of the game
-//
-// Returns:		True if the state given has no empty spaces; otherwise, returns false.
-bool ConnectK::IsStateFull(const CharVectorVector& state) const
-{
-	bool stateFull = true;
-	std::vector<char>::const_iterator iter;
-
-	for (int i = 0; i < M; i++)
-	{
-		iter = find(state[i].begin(), state[i].end(), BLANK);
-		if (iter != state[i].end())
-		{
-			stateFull = false;
-			break;
-		}
-	}
-
-	return stateFull;
-}
-
-// Purpose:     To determine if a state should continue to be evaluated (its child states), or to stop searching at this state.
-//
-// Parameters:	&state				The current state of the game
-//				depth				Current depth of search
-//				DepthCutoff			Max depth to search
-//				&timer				Timer used to check if the search should continue (will signal to Cutoff searching if timer expires)
-//
-// Returns:		True if the search should stop at this state and not evaluate any of its child states.
-bool ConnectK::Cutoff(const CharVectorVector& state, const int currentDepth, const int DepthCutoff, const ExpirationTimer& timer) const
-{
-	return (currentDepth >= DepthCutoff) || timer.HasExpired() || IsStateFull(state) || GameWinningMoveFound(state);
-}
-
-bool ConnectK::GameWinningMoveFound(const CharVectorVector& state) const
-{
-	int* lengths = countSegmentLengths(state, humanMark);
-	bool gameWinningMove = false;
-
-	if (lengths[K] > 0) // Greater than 0 if a winning move was found
-		gameWinningMove = true;
-
-	delete [] lengths;
-
-	return gameWinningMove;
+	return points - enemyPoints;
 }
