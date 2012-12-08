@@ -43,8 +43,8 @@ private:
 	bool Cutoff(const CharVectorVector& state, const int currentDepth, const int DepthCutoff, const ExpirationTimer& timer) const;
 	bool GameWinningMoveFound(const CharVectorVector& state) const;
 
-	int weigh(int *segments) const;
-	int *countSegmentLengths(const CharVectorVector& board, char mark) const;
+	int weigh(std::vector<int> segments) const;
+	std::vector<int> countSegmentLengths(const CharVectorVector& board, char mark) const;
 	int countWinningRectangles(const CharVectorVector& board, int row, int col, char mark) const;
 	int evaluate(const CharVectorVector& board, char mark, char enemyMark, boolean weighted = true) const;
 };

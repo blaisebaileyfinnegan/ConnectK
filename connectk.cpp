@@ -316,36 +316,29 @@ bool ConnectK::Cutoff(const CharVectorVector& state, const int currentDepth, con
 // Returns:		True if a player has K in a row in the state
 bool ConnectK::GameWinningMoveFound(const CharVectorVector& state) const
 {
-	int* lengths = countSegmentLengths(state, humanMark);
-	bool gameWinningMove = false;
+	std::vector<int> lengths;
+	lengths = countSegmentLengths(state, humanMark); // Get number of consecutive pieces of same player of length K
 
-	if (lengths[K] > 0) // Greater than 0 if a winning move was found
-		gameWinningMove = true;
-
-	delete [] lengths;
-
-	return gameWinningMove;
+	return lengths[K] > 0; // Greater than 0 if a winning move was found
 }
 
 // Takes any number of arguments and applies weight to it.
-int ConnectK::weigh(int *segments) const
+int ConnectK::weigh(std::vector<int> segments) const
 {
 	int points = 0;
 	for (int i = 1; i <= K; i++)
 	{
 		points += (segments[i]*pow(i, 4.0f));
 	}
-	delete [] segments;
+
 	return points;
 }
 
 // Returns array of how many of our marks are in each segment of length index. segments[3] > 1 == WIN
 // Brute forces every possible segment to allow for gravity off case
-int *ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) const
+std::vector<int> ConnectK::countSegmentLengths(const CharVectorVector& board, char mark) const
 {
-	int *segments = new int[K+1];
-	for (int i = 0; i <= K; i++)
-		segments[i] = 0;
+	vector<int> segments(K+1, 0);
 
 	// Start from the bottom left
 	for (int i = M - 1; i >= 0; i--)
